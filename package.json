@@ -1,0 +1,22 @@
+{
+  "name": "websocket-server",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "vue-native-websocket": "^2.0.14",
+    "websocket": "^1.0.31",
+    "ws": "^2.0.5",
+    "chalk": "^2.4.1",
+    "hypercore": "^8.3.0",
+    "hypertrie": "^5.0.2",
+    "hyperswarm": "^2.14.0",
+    "pump": "^3.0.0"
+  },
+  "devDependencies": {}
+}
