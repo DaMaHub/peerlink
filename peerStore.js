@@ -9,14 +9,14 @@
 * @license    http://www.gnu.org/licenses/old-licenses/gpl-3.0.html
 * @version    $Id$
 */
-const hypercore = require('hypercore')
-const hypertrie = require('hypertrie')
-const hyperswarm = require('hyperswarm')
-const fs = require('fs')
-var os = require("os")
-const util = require('util')
-const events = require('events')
-var pump = require('pump')
+import hypercore from 'hypercore'
+import hypertrie from 'hypertrie'
+import hyperswarm from 'hyperswarm'
+import fs from 'fs'
+import os from 'os'
+import util from 'util'
+import events from 'events'
+import pump from 'pump'
 
 var PeerStoreWorker = function () {
   events.EventEmitter.call(this)
@@ -144,4 +144,4 @@ PeerStoreWorker.prototype.peerRefContractReplicate = function (key) {
   })
 }
 
-module.exports = PeerStoreWorker
+export default PeerStoreWorker

@@ -9,8 +9,8 @@
 * @license    http://www.gnu.org/licenses/old-licenses/gpl-3.0.html
 * @version    $Id$
 */
-const util = require('util')
-const events = require('events')
+import util from 'util'
+import events from 'events'
 
 var KBIDStoreWorker = function (store) {
   events.EventEmitter.call(this)
@@ -53,4 +53,4 @@ KBIDStoreWorker.prototype.peerStoreKBIDentry = function (refContract) {
   return { kbid: true }
 }
 
-module.exports = KBIDStoreWorker
+export default KBIDStoreWorker

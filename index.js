@@ -1,10 +1,13 @@
-const WebSocketServer = require('websocket').server
-const http = require('http')
-const DatastoreWorker = require('./peerStore.js')
-const KBIDstoreWorker = require('./kbidStore.js')
-const fs = require('fs')
-var os = require("os")
+import pkg from 'websocket'
+const WebSocketServer = pkg.server
+import http from 'http'
+import SafeFLOW from 'node-safeflow'
+import DatastoreWorker from './peerStore.js'
+import KBIDstoreWorker from './kbidStore.js'
+import fs from 'fs'
+import os from 'os'
 
+const liveSafeFLOW = new SafeFLOW()
 let peerStoreLive =  new DatastoreWorker()
 let kbidStoreLive
 
@@ -47,8 +50,6 @@ wsServer.on('request', request => {
   connection.on('message', async msg => {
     // kbidStoreLive = new KBIDstoreWorker(datastoreK)
     function callbackKey (data) {
-      console.log('key data back')
-      console.log(data)
       let pubkeyData = {}
       pubkeyData.type = 'publickey'
       pubkeyData.pubkey = data
@@ -56,18 +57,42 @@ wsServer.on('request', request => {
     }
 
     function callback (err, data) {
-      console.log('data from hyperieiee')
+      console.log('data callback')
       console.log(err)
-      console.log(data)
       connection.sendUTF(JSON.stringify(data))
     }
     if (msg.type === 'utf8') {
       const o = JSON.parse(msg.utf8Data)
+      console.log(o)
       console.log('incoming message')
-      console.log(o.reftype.trim())
       if (o.reftype.trim() === 'hello') {
         console.log('conversaton')
         connection.sendUTF(JSON.stringify('talk to CALE'))
+      } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
+        console.log('safeFLOW input')
+        console.log(o)
+        // split to type of call allow e.g. auth, get, library etc.
+        if (o.action === 'auth') {
+          console.log('auth path for safeFLOW')
+          let authStatus = await liveSafeFLOW.networkAuthorisation(o.network, o.settings)
+          // if verified then load starting experiments into ECS-safeFLOW
+          connection.sendUTF(JSON.stringify(authStatus))
+        }
+        /*
+        // pass to sort data into ref contract types
+        const segmentedRefContracts = this.state.livesafeFLOW.refcontUtilityLive.refcontractSperate(backJSON)
+        console.log('segmentated contracts')
+        console.log(segmentedRefContracts)
+        this.state.referenceContract = segmentedRefContracts
+        // need to split for genesis and peer joined NXPs
+        const nxpSplit = this.state.livesafeFLOW.refcontUtilityLive.experimentSplit(segmentedRefContracts.experiment)
+        console.log('split------')
+        console.log(nxpSplit)
+        // look up modules for this experiments
+        this.state.networkExpModules = this.state.livesafeFLOW.refcontUtilityLive.expMatchModule(this.state.referenceContract.module, nxpSplit.genesis)
+        this.state.networkPeerExpModules = this.state.livesafeFLOW.refcontUtilityLive.expMatchGenModule(this.state.referenceContract.module, nxpSplit.joined)
+        console.log(this.state.networkPeerExpModules)
+        */
       } else if (o.reftype.trim() === 'viewpublickey') {
         // two peer syncing reference contracts
         const pubkey = peerStoreLive.getPrivatekey(callbackKey)

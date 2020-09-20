@@ -1,7 +1,8 @@
 {
   "name": "websocket-server",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
+  "type": "module",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -16,7 +17,8 @@
     "hypercore": "^8.3.0",
     "hypertrie": "^5.0.2",
     "hyperswarm": "^2.14.0",
-    "pump": "^3.0.0"
+    "pump": "^3.0.0",
+    "node-safeflow": "^0.6.0"
   },
   "devDependencies": {}
 }
