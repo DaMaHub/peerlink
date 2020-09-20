@@ -1,12 +1,16 @@
 import pkg from 'websocket'
 const WebSocketServer = pkg.server
 import http from 'http'
+import LibComposer from 'refcontractcomposer'
 import SafeFLOW from 'node-safeflow'
 import DatastoreWorker from './peerStore.js'
 import KBIDstoreWorker from './kbidStore.js'
 import fs from 'fs'
 import os from 'os'
 
+const liveLibrary = new LibComposer()
+console.log('live library')
+console.log(liveLibrary)
 const liveSafeFLOW = new SafeFLOW()
 let peerStoreLive =  new DatastoreWorker()
 let kbidStoreLive
@@ -59,7 +63,17 @@ wsServer.on('request', request => {
     function callback (err, data) {
       console.log('data callback')
       console.log(err)
-      connection.sendUTF(JSON.stringify(data))
+      // pass to sort data into ref contract types
+      let libraryData = {}
+      libraryData.data = 'contracts'
+      const segmentedRefContracts = liveLibrary.liveLibraryLib.refcontractSperate(data)
+      libraryData.referenceContracts = segmentedRefContracts
+      // need to split for genesis and peer joined NXPs
+      const nxpSplit = liveLibrary.liveLibraryLib.experimentSplit(segmentedRefContracts.experiment)
+      // look up modules for this experiments
+      libraryData.networkExpModules = liveLibrary.liveLibraryLib.expMatchModule(libraryData.referenceContracts.module, nxpSplit.genesis)
+      libraryData.networkPeerExpModules = liveLibrary.liveLibraryLib.expMatchGenModule(libraryData.referenceContracts.module, nxpSplit.joined)
+      connection.sendUTF(JSON.stringify(libraryData))
     }
     if (msg.type === 'utf8') {
       const o = JSON.parse(msg.utf8Data)
@@ -78,21 +92,6 @@ wsServer.on('request', request => {
           // if verified then load starting experiments into ECS-safeFLOW
           connection.sendUTF(JSON.stringify(authStatus))
         }
-        /*
-        // pass to sort data into ref contract types
-        const segmentedRefContracts = this.state.livesafeFLOW.refcontUtilityLive.refcontractSperate(backJSON)
-        console.log('segmentated contracts')
-        console.log(segmentedRefContracts)
-        this.state.referenceContract = segmentedRefContracts
-        // need to split for genesis and peer joined NXPs
-        const nxpSplit = this.state.livesafeFLOW.refcontUtilityLive.experimentSplit(segmentedRefContracts.experiment)
-        console.log('split------')
-        console.log(nxpSplit)
-        // look up modules for this experiments
-        this.state.networkExpModules = this.state.livesafeFLOW.refcontUtilityLive.expMatchModule(this.state.referenceContract.module, nxpSplit.genesis)
-        this.state.networkPeerExpModules = this.state.livesafeFLOW.refcontUtilityLive.expMatchGenModule(this.state.referenceContract.module, nxpSplit.joined)
-        console.log(this.state.networkPeerExpModules)
-        */
       } else if (o.reftype.trim() === 'viewpublickey') {
         // two peer syncing reference contracts
         const pubkey = peerStoreLive.getPrivatekey(callbackKey)

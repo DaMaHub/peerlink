@@ -18,6 +18,7 @@
     "hypertrie": "^5.0.2",
     "hyperswarm": "^2.14.0",
     "pump": "^3.0.0",
+    "refcontractcomposer": "^0.0.5",
     "node-safeflow": "^0.6.0"
   },
   "devDependencies": {}
