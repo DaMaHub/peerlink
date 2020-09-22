@@ -139,6 +139,32 @@ wsServer.on('request', request => {
             const savedFeedback = peerStoreLive.peerStoreRefContract(o)
             connection.sendUTF(JSON.stringify(savedFeedback))
           }
+        } else if (o.reftype.trim() === 'moduletemp') {
+          // create new temp modules for new experiment
+          console.log('temp modules creattion')
+          let modCount = 1
+          let moduleHolder = []
+          for (const mc of o.data) {
+            // console.log(mc)
+            const prepareModule = liveLibrary.liveComposer.moduleComposer(mc, '')
+            let moduleContainer = {}
+            moduleContainer.name = prepareModule.contract.concept.type
+            moduleContainer.id = modCount
+            moduleContainer.refcont = prepareModule.hash
+            moduleHolder.push(moduleContainer)
+            modCount++
+          }
+          let moduleTempData = {}
+          moduleTempData.type = 'modulesTemp'
+          moduleTempData.data = moduleHolder
+          connection.sendUTF(JSON.stringify(moduleTempData))
+        } else if (o.reftype.trim() === 'newmodules') {
+          console.log('new modules per new experiment')
+          let moduleRefContract = liveLibrary.liveComposer.moduleComposer(o.data, 'join')
+          let moduleNewContracts = {}
+          moduleNewContracts.type = 'modulesNew'
+          moduleNewContracts.data = moduleRefContract
+          connection.sendUTF(JSON.stringify(moduleNewContracts))
         } else if (o.reftype.trim() === 'visualise') {
           // query peer hypertrie for packaging
           if (o.action === 'GET') {
