@@ -107,6 +107,7 @@ PeerStoreWorker.prototype.peerStoreRefContract = function (refContract) {
   returnMessage.stored = true
   returnMessage.type = refContract.reftype
   returnMessage.key = refContract.hash
+  returnMessage.contract = refContract.contract
   console.log(returnMessage)
   return returnMessage
 }
