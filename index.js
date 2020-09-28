@@ -12,7 +12,7 @@ const liveLibrary = new LibComposer()
 const liveSafeFLOW = new SafeFLOW()
 let peerStoreLive =  new DatastoreWorker()
 let kbidStoreLive
-
+let libraryData = {}
 const server = http.createServer((request, response) => {
   // process HTTP request. Since we're writing just WebSockets
   // server we don't have to implement anything.
@@ -62,7 +62,6 @@ wsServer.on('request', request => {
       console.log('data callback')
       console.log(err)
       // pass to sort data into ref contract types
-      let libraryData = {}
       libraryData.data = 'contracts'
       const segmentedRefContracts = liveLibrary.liveLibraryLib.refcontractSperate(data)
       libraryData.referenceContracts = segmentedRefContracts
@@ -142,7 +141,6 @@ wsServer.on('request', request => {
           }
         } else if (o.reftype.trim() === 'moduletemp') {
           // create new temp modules for new experiment
-          console.log('temp modules creattion')
           let modCount = 1
           let moduleHolder = []
           for (const mc of o.data) {
@@ -160,7 +158,6 @@ wsServer.on('request', request => {
           moduleTempData.data = moduleHolder
           connection.sendUTF(JSON.stringify(moduleTempData))
         } else if (o.reftype.trim() === 'newmodules') {
-          console.log('new modules per new experiment')
           let moduleRefContract = liveLibrary.liveComposer.moduleComposer(o.data, 'join')
           const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
           connection.sendUTF(JSON.stringify(savedFeedback))
@@ -185,20 +182,22 @@ wsServer.on('request', request => {
         } else if (o.reftype.trim() === 'newexperimentmodule') {
           // a new genesis network experiment to store to network library
           let moduleGenesisList = []
+          let moduleGenesisExpanded = []
           let newModCount = o.data.length
           for (let mh of o.data) {
             const moduleRefContract = liveLibrary.liveComposer.moduleComposer(mh, '')
             const moduleRefContractReady = JSON.stringify(moduleRefContract)
             const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
             moduleGenesisList.push(savedFeedback.key)
+            moduleGenesisExpanded.push(savedFeedback.contract)
             newModCount--
           }
           if (newModCount === 0) {
             // aggregate all modules into exeriment contract
             let genesisRefContract = liveLibrary.liveComposer.experimentComposerGenesis(moduleGenesisList)
-            // need to expand out the modules also double check they are created
-            let expandedModules = liveLibrary.liveLibraryLib.expMatchModule(libraryData.referenceContracts.module, genesisRefContract)
-            const savedFeedback = peerStoreLive.peerStoreRefContract(expandedModules)
+            // double check they are created
+            const savedFeedback = peerStoreLive.peerStoreRefContract(genesisRefContract)
+            savedFeedback.expanded = moduleGenesisExpanded
             connection.sendUTF(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'joinexperiment') {
@@ -219,7 +218,6 @@ wsServer.on('request', request => {
             connection.sendUTF(JSON.stringify(savedFeedback))
           }
         } else if (o.action === 'extractexperiment') {
-          console.log('library utility call')
           let joinExpDisplay = {}
           joinExpDisplay.type = 'extractexperiment'
           joinExpDisplay.data = liveLibrary.liveLibraryLib.extractData(o.data.modules, 'data')
@@ -228,8 +226,6 @@ wsServer.on('request', request => {
           // look up option contracts for each ref contract type
           let dataOptions = []
           for (let optionD of joinExpDisplay.data) {
-            console.log('options list')
-            console.log(optionD)
             const refcontract = liveLibrary.liveLibraryLib.refcontractLookup(optionD.option.key, joinExpDisplay.data)
             dataOptions.push(refcontract)
           }
