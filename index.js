@@ -60,6 +60,7 @@ wsServer.on('request', request => {
 
     function callback (err, data) {
       console.log('data callback')
+      // console.log(data)
       console.log(err)
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
@@ -69,15 +70,15 @@ wsServer.on('request', request => {
       const nxpSplit = liveLibrary.liveLibraryLib.experimentSplit(segmentedRefContracts.experiment)
       libraryData.splitExperiments = nxpSplit
       // look up modules for this experiments
-      libraryData.networkExpModules = liveLibrary.liveLibraryLib.expMatchModule(libraryData.referenceContracts.module, nxpSplit.genesis)
-      libraryData.networkPeerExpModules = liveLibrary.liveLibraryLib.expMatchGenModule(libraryData.referenceContracts.module, nxpSplit.joined)
+      libraryData.networkExpModules = liveLibrary.liveLibraryLib.expMatchModuleGenesis(libraryData.referenceContracts.module, nxpSplit.genesis)
+      libraryData.networkPeerExpModules = liveLibrary.liveLibraryLib.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
       connection.sendUTF(JSON.stringify(libraryData))
     }
     // logic for incoming request flows
     if (msg.type === 'utf8') {
       const o = JSON.parse(msg.utf8Data)
+      console.log('--incoming message-----')
       console.log(o)
-      console.log('incoming message')
       if (o.reftype.trim() === 'hello') {
         console.log('conversaton')
         connection.sendUTF(JSON.stringify('talk to CALE'))
@@ -130,37 +131,6 @@ wsServer.on('request', request => {
             const savedFeedback = peerStoreLive.peerStoreRefContract(o)
             connection.sendUTF(JSON.stringify(savedFeedback))
           }
-        } else if (o.reftype.trim() === 'module') {
-          // query peer hypertrie for packaging
-          if (o.action === 'GET') {
-            peerStoreLive.peerGETRefContracts('module', callback)
-          } else {
-            // save a new refContract
-            const savedFeedback = peerStoreLive.peerStoreRefContract(o)
-            connection.sendUTF(JSON.stringify(savedFeedback))
-          }
-        } else if (o.reftype.trim() === 'moduletemp') {
-          // create new temp modules for new experiment
-          let modCount = 1
-          let moduleHolder = []
-          for (const mc of o.data) {
-            // console.log(mc)
-            const prepareModule = liveLibrary.liveComposer.moduleComposer(mc, '')
-            let moduleContainer = {}
-            moduleContainer.name = prepareModule.contract.concept.type
-            moduleContainer.id = modCount
-            moduleContainer.refcont = prepareModule.hash
-            moduleHolder.push(moduleContainer)
-            modCount++
-          }
-          let moduleTempData = {}
-          moduleTempData.type = 'modulesTemp'
-          moduleTempData.data = moduleHolder
-          connection.sendUTF(JSON.stringify(moduleTempData))
-        } else if (o.reftype.trim() === 'newmodules') {
-          let moduleRefContract = liveLibrary.liveComposer.moduleComposer(o.data, 'join')
-          const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
-          connection.sendUTF(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'visualise') {
           // query peer hypertrie for packaging
           if (o.action === 'GET') {
@@ -201,9 +171,46 @@ wsServer.on('request', request => {
             connection.sendUTF(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'joinexperiment') {
-          let joinRefContract = liveLibrary.liveComposer.experimentComposerJoin(o.data)
-          const savedFeedback = peerStoreLive.peerStoreRefContract(joinRefContract)
-          connection.sendUTF(JSON.stringify(savedFeedback))
+          let moduleJoinedList = []
+          let moduleJoinedExpanded = []
+          let newModCount = o.data.exp.modules.length
+          // for each module in experiment, add peer selections
+          // loop over list of module contract to make genesis ie first
+          for (let mh of o.data.exp.modules) {
+            // prepare new modules for this peer  ledger
+            let peerModules = {}
+            // look up module template genesis contract
+            if (mh.value.concept.moduleinfo.name === 'question') {
+              peerModules.type = 'question'
+              peerModules.question = mh.value.concept.question
+            } else if (mh.value.concept.moduleinfo.name === 'data') {
+              peerModules.type = 'data'
+              peerModules.data = o.data.options.data
+            } else if (mh.value.concept.moduleinfo.name === 'compute') {
+              peerModules.type = 'compute'
+              peerModules.compute = mh.value.concept.refcont
+              peerModules.controls = o.data.options.compute
+              peerModules.settings = o.data.options.visualise
+            } else if (mh.value.concept.moduleinfo.name === 'visualise') {
+              peerModules.type = 'visualise'
+              peerModules.visualise = mh.value.concept.refcont
+            }
+            let moduleRefContract = liveLibrary.liveComposer.moduleComposer(peerModules, 'join')
+            const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
+            moduleJoinedList.push(savedFeedback.key)
+            moduleJoinedExpanded.push(savedFeedback.contract)
+            newModCount--
+          }
+          // check all modules are present and create peers network refcont joined
+          if (newModCount === 0) {
+            // aggregate all modules into exeriment contract
+            // double check they are created
+            console.log('input to join network exerpkment')
+            let joinRefContract = liveLibrary.liveComposer.experimentComposerJoin(moduleJoinedList)
+            const savedFeedback = peerStoreLive.peerStoreRefContract(joinRefContract)
+            savedFeedback.expanded = moduleJoinedExpanded
+            connection.sendUTF(JSON.stringify(savedFeedback))
+          }
         } else if (o.reftype.trim() === 'genesisexperiment') {
           let genesisRefContract = liveLibrary.liveComposer.experimentComposerGenesis(o.data)
           const savedFeedback = peerStoreLive.peerStoreRefContract(genesisRefContract)
@@ -217,9 +224,9 @@ wsServer.on('request', request => {
             const savedFeedback = kbidStoreLive.peerStoreKBIDentry(o)
             connection.sendUTF(JSON.stringify(savedFeedback))
           }
-        } else if (o.action === 'extractexperiment') {
+        } else if (o.action === 'extractexperimentmodules') {
           let joinExpDisplay = {}
-          joinExpDisplay.type = 'extractexperiment'
+          joinExpDisplay.type = 'extractexperimentmodules'
           joinExpDisplay.data = liveLibrary.liveLibraryLib.extractData(o.data.modules, 'data')
           joinExpDisplay.compute = liveLibrary.liveLibraryLib.extractCompute(o.data.modules, 'compute')
           joinExpDisplay.visualise = liveLibrary.liveLibraryLib.extractVisualise(o.data.modules, 'visualise')
@@ -251,7 +258,40 @@ wsServer.on('request', request => {
           let refContractLookup = liveLibrary.liveLibraryLib.refcontractLookup(joinExpDisplay.visualise, joinExpDisplay.visualise)
           joinExpDisplay.visualise.option = refContractLookup
           joinExpDisplay.visualise.tempvis = tempNew */
+          console.log('extract data to show preview / join info')
+          console.log(joinExpDisplay)
           connection.sendUTF(JSON.stringify(joinExpDisplay))
+        } else if (o.reftype.trim() === 'module') {
+          // query peer hypertrie for packaging
+          if (o.action === 'GET') {
+            peerStoreLive.peerGETRefContracts('module', callback)
+          } else {
+            // save a new refContract
+            const savedFeedback = peerStoreLive.peerStoreRefContract(o)
+            connection.sendUTF(JSON.stringify(savedFeedback))
+          }
+        } else if (o.reftype.trim() === 'moduletemp') {
+          // create new temp modules for new experiment
+          let modCount = 1
+          let moduleHolder = []
+          for (const mc of o.data) {
+            // console.log(mc)
+            const prepareModule = liveLibrary.liveComposer.moduleComposer(mc, '')
+            let moduleContainer = {}
+            moduleContainer.name = prepareModule.contract.concept.type
+            moduleContainer.id = modCount
+            moduleContainer.refcont = prepareModule.hash
+            moduleHolder.push(moduleContainer)
+            modCount++
+          }
+          let moduleTempData = {}
+          moduleTempData.type = 'modulesTemp'
+          moduleTempData.data = moduleHolder
+          connection.sendUTF(JSON.stringify(moduleTempData))
+        } else if (o.reftype.trim() === 'newmodules') {
+          let moduleRefContract = liveLibrary.liveComposer.moduleComposer(o.data, 'join')
+          const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
+          connection.sendUTF(JSON.stringify(savedFeedback))
         }
       } else {
         clicks += 1
