@@ -159,7 +159,11 @@ wsServer.on('request', request => {
             const moduleRefContractReady = JSON.stringify(moduleRefContract)
             const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
             moduleGenesisList.push(savedFeedback.key)
-            moduleGenesisExpanded.push(savedFeedback.contract)
+            // stand key value format or query and get back ref contract double check TODO
+            let moduleContract = {}
+            moduleContract.key = savedFeedback.key
+            moduleContract.value = savedFeedback.contract
+            moduleGenesisExpanded.push(moduleContract) // .contract)
             newModCount--
           }
           if (newModCount === 0) {
@@ -205,7 +209,6 @@ wsServer.on('request', request => {
           if (newModCount === 0) {
             // aggregate all modules into exeriment contract
             // double check they are created
-            console.log('input to join network exerpkment')
             let joinRefContract = liveLibrary.liveComposer.experimentComposerJoin(moduleJoinedList)
             const savedFeedback = peerStoreLive.peerStoreRefContract(joinRefContract)
             savedFeedback.expanded = moduleJoinedExpanded
@@ -258,8 +261,6 @@ wsServer.on('request', request => {
           let refContractLookup = liveLibrary.liveLibraryLib.refcontractLookup(joinExpDisplay.visualise, joinExpDisplay.visualise)
           joinExpDisplay.visualise.option = refContractLookup
           joinExpDisplay.visualise.tempvis = tempNew */
-          console.log('extract data to show preview / join info')
-          console.log(joinExpDisplay)
           connection.sendUTF(JSON.stringify(joinExpDisplay))
         } else if (o.reftype.trim() === 'module') {
           // query peer hypertrie for packaging
@@ -275,7 +276,6 @@ wsServer.on('request', request => {
           let modCount = 1
           let moduleHolder = []
           for (const mc of o.data) {
-            // console.log(mc)
             const prepareModule = liveLibrary.liveComposer.moduleComposer(mc, '')
             let moduleContainer = {}
             moduleContainer.name = prepareModule.contract.concept.type

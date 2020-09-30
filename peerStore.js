@@ -96,8 +96,6 @@ PeerStoreWorker.prototype.peerGETRefContracts = function (getType, callback) {
 */
 PeerStoreWorker.prototype.peerStoreRefContract = function (refContract) {
   // save
-  console.log('save new Ref Contract')
-  console.log(refContract)
   const localthis = this
   this.datastore.put(refContract.hash, refContract.contract, function () {
     console.log('saved hypertrie OK')
@@ -108,7 +106,6 @@ PeerStoreWorker.prototype.peerStoreRefContract = function (refContract) {
   returnMessage.type = refContract.reftype
   returnMessage.key = refContract.hash
   returnMessage.contract = refContract.contract
-  console.log(returnMessage)
   return returnMessage
 }
 
@@ -122,8 +119,6 @@ PeerStoreWorker.prototype.peerRefContractReplicate = function (key) {
   const localthis = this
   var connectCount = 0
   let rpeer1Key = Buffer.from(key, "hex")
-  console.log('replicate other peer key buffer format')
-  console.log(rpeer1Key)
 
   this.datastorePair = hypertrie(os.homedir() + '/peerlink/peerpair1.db', rpeer1Key, {valueEncoding: 'json'})
 
