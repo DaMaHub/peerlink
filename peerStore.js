@@ -90,6 +90,19 @@ PeerStoreWorker.prototype.peerGETRefContracts = function (getType, callback) {
 }
 
 /**
+* lookup specific reference contract
+* @method getRefContract
+*
+*/
+PeerStoreWorker.prototype.getRefContract = function (getType, refcont, callback) {
+  // read
+  console.log('peer data datype query')
+  let databack = this.datastore.list( { ifAvailable: true }, callback)
+  return true
+}
+
+
+/**
 * save new Reference Contract
 * @method peerStoreRefContract
 *

@@ -48,6 +48,11 @@ let wsServer = new WebSocketServer({
 wsServer.on('request', request => {
   let connection = request.accept(null, request.origin)
   console.log('someone connected')
+  // listenr for data back from ECS
+  liveSafeFLOW.on('displayUpdate', (data) => {
+    console.log('databackfrom ECS')
+    connection.sendUTF(JSON.stringify(data))
+  })
 
   connection.on('message', async msg => {
     // kbidStoreLive = new KBIDstoreWorker(datastoreK)
@@ -87,6 +92,30 @@ wsServer.on('request', request => {
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.network, o.settings)
           // if verified then load starting experiments into ECS-safeFLOW
           connection.sendUTF(JSON.stringify(authStatus))
+        } else if (o.action === 'networkexperiment') {
+          // start gather data, perform compute, formatting etc.
+          async function expCallback (err, data) {
+            console.log('epxeriment calleback')
+            console.log(err)
+            console.log(data)
+            let matchContract = {}
+            for (let ditem of data) {
+              if (ditem === '1234' ) {
+                matchContract = ditem
+              }
+            }
+            let ecsData = await liveSafeFLOW.startFlow(matchContract)
+            let summaryECS = {}
+            summaryECS.type = 'ecssummary'
+            summaryECS.data = ecsData
+            connection.sendUTF(JSON.stringify(summaryECS))
+          }
+          // const experimentRefContract = peerStoreLive.getRefContract('experiment', o.data, expCallback)
+          let ecsData = await liveSafeFLOW.startFlow(o.data)
+          let summaryECS = {}
+          summaryECS.type = 'ecssummary'
+          summaryECS.data = ecsData
+          connection.sendUTF(JSON.stringify(summaryECS))
         }
       } else if (o.type.trim() === 'library' ) {
         // library routing
