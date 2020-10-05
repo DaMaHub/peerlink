@@ -213,22 +213,24 @@ wsServer.on('request', request => {
             // prepare new modules for this peer  ledger
             let peerModules = {}
             // look up module template genesis contract
-            if (mh.value.concept.moduleinfo.name === 'question') {
+            if (mh.value.info.moduleinfo.name === 'question') {
               peerModules.type = 'question'
-              peerModules.question = mh.value.concept.question
-            } else if (mh.value.concept.moduleinfo.name === 'data') {
+              peerModules.question = mh.value.info.question
+            } else if (mh.value.info.moduleinfo.name === 'data') {
               peerModules.type = 'data'
               peerModules.data = o.data.options.data
-            } else if (mh.value.concept.moduleinfo.name === 'compute') {
+            } else if (mh.value.info.moduleinfo.name === 'compute') {
               peerModules.type = 'compute'
-              peerModules.compute = mh.value.concept.refcont
+              peerModules.compute = mh.value.info.refcont
               peerModules.controls = o.data.options.compute
               peerModules.settings = o.data.options.visualise
-            } else if (mh.value.concept.moduleinfo.name === 'visualise') {
+            } else if (mh.value.info.moduleinfo.name === 'visualise') {
               peerModules.type = 'visualise'
-              peerModules.visualise = mh.value.concept.refcont
+              peerModules.visualise = mh.value.info.refcont
             }
             let moduleRefContract = liveLibrary.liveComposer.moduleComposer(peerModules, 'join')
+            console.log('parepared module')
+            console.log(moduleRefContract)
             const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
             moduleJoinedList.push(savedFeedback.key)
             moduleJoinedExpanded.push(savedFeedback.contract)
@@ -307,7 +309,7 @@ wsServer.on('request', request => {
           for (const mc of o.data) {
             const prepareModule = liveLibrary.liveComposer.moduleComposer(mc, '')
             let moduleContainer = {}
-            moduleContainer.name = prepareModule.contract.concept.type
+            moduleContainer.name = prepareModule.contract.info.type
             moduleContainer.id = modCount
             moduleContainer.refcont = prepareModule.hash
             moduleHolder.push(moduleContainer)
