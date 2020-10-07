@@ -51,6 +51,7 @@ wsServer.on('request', request => {
   // listenr for data back from ECS
   liveSafeFLOW.on('displayUpdate', (data) => {
     console.log('databackfrom ECS')
+    data.type = 'ecsflow'
     connection.sendUTF(JSON.stringify(data))
   })
 
@@ -227,13 +228,18 @@ wsServer.on('request', request => {
             } else if (mh.value.info.moduleinfo.name === 'visualise') {
               peerModules.type = 'visualise'
               peerModules.visualise = mh.value.info.refcont
+              peerModules.settings = o.data.options.visualise
             }
             let moduleRefContract = liveLibrary.liveComposer.moduleComposer(peerModules, 'join')
             console.log('parepared module')
             console.log(moduleRefContract)
             const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
             moduleJoinedList.push(savedFeedback.key)
-            moduleJoinedExpanded.push(savedFeedback.contract)
+            // form key value refcont structure
+            let moduleKeyValue = {}
+            moduleKeyValue.key = savedFeedback.key
+            moduleKeyValue.value = savedFeedback.contract
+            moduleJoinedExpanded.push(moduleKeyValue)
             newModCount--
           }
           // check all modules are present and create peers network refcont joined
