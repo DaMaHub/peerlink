@@ -117,6 +117,10 @@ wsServer.on('request', request => {
           summaryECS.type = 'ecssummary'
           summaryECS.data = ecsData
           connection.sendUTF(JSON.stringify(summaryECS))
+        } else if (o.action === 'networkexperiment') {
+          // update to existing live ECS entity
+          console.log('update to existing ECS entity o NXP shell')
+          let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
         }
       } else if (o.type.trim() === 'library' ) {
         // library routing
