@@ -117,7 +117,7 @@ wsServer.on('request', request => {
           summaryECS.type = 'ecssummary'
           summaryECS.data = ecsData
           connection.sendUTF(JSON.stringify(summaryECS))
-        } else if (o.action === 'networkexperiment') {
+        } else if (o.action === 'updatenetworkexperiment') {
           // update to existing live ECS entity
           console.log('update to existing ECS entity o NXP shell')
           let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
@@ -335,8 +335,7 @@ wsServer.on('request', request => {
           connection.sendUTF(JSON.stringify(savedFeedback))
         }
       } else {
-        clicks += 1
-        console.log('incrementing clicks to', clicks)
+        console.log('nothing matched tell of that')
       }
     }
   })
