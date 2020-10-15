@@ -49,9 +49,19 @@ wsServer.on('request', request => {
   let connection = request.accept(null, request.origin)
   console.log('someone connected')
   // listenr for data back from ECS
-  liveSafeFLOW.on('displayUpdate', (data) => {
+  liveSafeFLOW.on('displayEntity', (data) => {
     console.log('databackfrom ECS')
-    data.type = 'ecsflow'
+    data.type = 'newEntity'
+    connection.sendUTF(JSON.stringify(data))
+  })
+  liveSafeFLOW.on('displayUpdateEntity', (data) => {
+    console.log('databackfrom ECS')
+    data.type = 'updateEntity'
+    connection.sendUTF(JSON.stringify(data))
+  })
+  liveSafeFLOW.on('displayUpdateEntityRange', (data) => {
+    console.log('databackfrom ECS')
+    data.type = 'updateEntityRange'
     connection.sendUTF(JSON.stringify(data))
   })
 
@@ -119,7 +129,7 @@ wsServer.on('request', request => {
           connection.sendUTF(JSON.stringify(summaryECS))
         } else if (o.action === 'updatenetworkexperiment') {
           // update to existing live ECS entity
-          console.log('update to existing ECS entity o NXP shell')
+          console.log('PPRLINK --update to existing ECS entity')
           let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
         }
       } else if (o.type.trim() === 'library' ) {
