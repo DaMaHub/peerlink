@@ -54,6 +54,11 @@ wsServer.on('request', request => {
     data.type = 'newEntity'
     connection.sendUTF(JSON.stringify(data))
   })
+  liveSafeFLOW.on('displayEntityRange', (data) => {
+    console.log('databackfrom ECS')
+    data.type = 'newEntityRange'
+    connection.sendUTF(JSON.stringify(data))
+  })
   liveSafeFLOW.on('displayUpdateEntity', (data) => {
     console.log('databackfrom ECS')
     data.type = 'updateEntity'

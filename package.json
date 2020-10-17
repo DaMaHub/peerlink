@@ -19,7 +19,7 @@
     "hyperswarm": "^2.14.0",
     "pump": "^3.0.0",
     "refcontractcomposer": "^0.0.7",
-    "node-safeflow": "^0.6.2"
+    "node-safeflow": "^0.6.3"
   },
   "devDependencies": {}
 }
