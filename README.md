@@ -2,6 +2,8 @@
 
 PeerLink is 'peer to peer middleware'.  Glue to connect peer tools to peer to peer protocols, data and services.
 
+NOTE: this is proof of concept software.
+
 connections:
 Hypercore
 Network Library
