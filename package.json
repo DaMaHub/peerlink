@@ -1,25 +1,31 @@
 {
-  "name": "websocket-server",
-  "version": "0.1.0",
+  "name": "peerlink",
+  "version": "0.1.1",
   "private": false,
   "type": "module",
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "start": "node src/index.js",
+    "dev": "nw src/index.js",
+    "prod": "nwbuild --platforms win32,win64,osx64,linux32,linux64 --buildDir dist/ src/index.js",
+    "build": "babel src -d babout"
   },
   "dependencies": {
+    "chalk": "^2.4.1",
     "express": "^4.17.1",
+    "hypercore": "^8.3.0",
+    "hyperswarm": "^2.14.0",
+    "hypertrie": "^5.0.2",
+    "node-safeflow": "^0.6.4",
+    "pump": "^3.0.0",
+    "refcontractcomposer": "^0.1.0",
     "vue-native-websocket": "^2.0.14",
     "websocket": "^1.0.31",
-    "ws": "^2.0.5",
-    "chalk": "^2.4.1",
-    "hypercore": "^8.3.0",
-    "hypertrie": "^5.0.2",
-    "hyperswarm": "^2.14.0",
-    "pump": "^3.0.0",
-    "refcontractcomposer": "^0.0.7",
-    "node-safeflow": "^0.6.4"
+    "ws": "^2.0.5"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "nw": "^0.18.2",
+    "nw-builder": "^3.1.2"
+  }
 }
