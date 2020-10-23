@@ -1,6 +1,6 @@
 'use strict'
 import http from 'http'
-import LibComposer from 'refcontractcomposer'
+import LibComposer from 'librarycomposer'
 import SafeFLOW from 'node-safeflow'
 import DatastoreWorker from './peerStore.js'
 import KBIDstoreWorker from './kbidStore.js'
@@ -86,14 +86,14 @@ wsServer.on('request', request => {
       console.log(err)
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
-      const segmentedRefContracts = liveLibrary.liveLibraryLib.refcontractSperate(data)
+      const segmentedRefContracts = liveLibrary.liveRefcontUtility.refcontractSperate(data)
       libraryData.referenceContracts = segmentedRefContracts
       // need to split for genesis and peer joined NXPs
-      const nxpSplit = liveLibrary.liveLibraryLib.experimentSplit(segmentedRefContracts.experiment)
+      const nxpSplit = liveLibrary.liveRefcontUtility.experimentSplit(segmentedRefContracts.experiment)
       libraryData.splitExperiments = nxpSplit
       // look up modules for this experiments
-      libraryData.networkExpModules = liveLibrary.liveLibraryLib.expMatchModuleGenesis(libraryData.referenceContracts.module, nxpSplit.genesis)
-      libraryData.networkPeerExpModules = liveLibrary.liveLibraryLib.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
+      libraryData.networkExpModules = liveLibrary.liveRefcontUtility.expMatchModuleGenesis(libraryData.referenceContracts.module, nxpSplit.genesis)
+      libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
       connection.sendUTF(JSON.stringify(libraryData))
     }
     // logic for incoming request flows
@@ -287,23 +287,23 @@ wsServer.on('request', request => {
         } else if (o.action === 'extractexperimentmodules') {
           let joinExpDisplay = {}
           joinExpDisplay.type = 'extractexperimentmodules'
-          joinExpDisplay.data = liveLibrary.liveLibraryLib.extractData(o.data.modules, 'data')
-          joinExpDisplay.compute = liveLibrary.liveLibraryLib.extractCompute(o.data.modules, 'compute')
-          joinExpDisplay.visualise = liveLibrary.liveLibraryLib.extractVisualise(o.data.modules, 'visualise')
+          joinExpDisplay.data = liveLibrary.liveRefcontUtility.extractData(o.data.modules, 'data')
+          joinExpDisplay.compute = liveLibrary.liveRefcontUtility.extractCompute(o.data.modules, 'compute')
+          joinExpDisplay.visualise = liveLibrary.liveRefcontUtility.extractVisualise(o.data.modules, 'visualise')
           // look up option contracts for each ref contract type
           let dataOptions = []
           for (let optionD of joinExpDisplay.data) {
-            const refcontract = liveLibrary.liveLibraryLib.refcontractLookup(optionD.option.key, joinExpDisplay.data)
+            const refcontract = liveLibrary.liveRefcontUtility.refcontractLookup(optionD.option.key, joinExpDisplay.data)
             dataOptions.push(refcontract)
           }
           let computeOptions = []
           for (let optionD of joinExpDisplay.compute) {
-            const refcontract = liveLibrary.liveLibraryLib.refcontractLookup(optionD.option.key, joinExpDisplay.compute)
+            const refcontract = liveLibrary.liveRefcontUtility.refcontractLookup(optionD.option.key, joinExpDisplay.compute)
             computeOptions.push(refcontract)
           }
           let visOptions = []
           for (let optionD of joinExpDisplay.visualise) {
-            const refcontract = liveLibrary.liveLibraryLib.refcontractLookup(optionD.option.key, joinExpDisplay.visualise)
+            const refcontract = liveLibrary.liveRefcontUtility.refcontractLookup(optionD.option.key, joinExpDisplay.visualise)
             visOptions.push(refcontract)
           }
           let experimentOptions = {}
@@ -315,7 +315,7 @@ wsServer.on('request', request => {
           /*
           console.log('VIS look up')
           console.log(joinExpDisplay.visualise)
-          let refContractLookup = liveLibrary.liveLibraryLib.refcontractLookup(joinExpDisplay.visualise, joinExpDisplay.visualise)
+          let refContractLookup = liveLibrary.liveRefcontUtility.refcontractLookup(joinExpDisplay.visualise, joinExpDisplay.visualise)
           joinExpDisplay.visualise.option = refContractLookup
           joinExpDisplay.visualise.tempvis = tempNew */
           connection.sendUTF(JSON.stringify(joinExpDisplay))
