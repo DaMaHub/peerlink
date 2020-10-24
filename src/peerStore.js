@@ -47,6 +47,10 @@ PeerStoreWorker.prototype.setupDatastores = function () {
   this.datastoreK = hypertrie(os.homedir() + '/peerlink/kbidpeer1.db', {valueEncoding: 'json'})
   console.log('store and KBID workers live')
   // console.log(peerStoreLive)
+  // does networlibrary sync datastore exist? Bring to live to check
+  /* if () {
+  this.datastorePair = hypertrie(os.homedir() + '/peerlink2/peerpair1.db', {valueEncoding: 'json'})
+  } */
 }
 
 /**

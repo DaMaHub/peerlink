@@ -82,7 +82,7 @@ wsServer.on('request', request => {
 
     function callback (err, data) {
       console.log('data callback')
-      // console.log(data)
+      console.log(data)
       console.log(err)
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
@@ -114,7 +114,6 @@ wsServer.on('request', request => {
           async function expCallback (err, data) {
             console.log('epxeriment calleback')
             console.log(err)
-            console.log(data)
             let matchContract = {}
             for (let ditem of data) {
               if (ditem === '1234' ) {
@@ -311,13 +310,6 @@ wsServer.on('request', request => {
           experimentOptions.compute = computeOptions
           experimentOptions.visualise = visOptions
           joinExpDisplay.options = experimentOptions
-          // setup toolbar info.
-          /*
-          console.log('VIS look up')
-          console.log(joinExpDisplay.visualise)
-          let refContractLookup = liveLibrary.liveRefcontUtility.refcontractLookup(joinExpDisplay.visualise, joinExpDisplay.visualise)
-          joinExpDisplay.visualise.option = refContractLookup
-          joinExpDisplay.visualise.tempvis = tempNew */
           connection.sendUTF(JSON.stringify(joinExpDisplay))
         } else if (o.reftype.trim() === 'module') {
           // query peer hypertrie for packaging
