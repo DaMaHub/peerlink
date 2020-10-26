@@ -45,8 +45,10 @@ PeerStoreWorker.prototype.setupDatastores = function () {
   })
   // peer library
   this.datastorePeerlibrary = hypertrie(os.homedir() + '/peerlink/peerlibrary.db', {valueEncoding: 'json'})
-  // network library
+  // network library peer
   this.datastoreLibrary = hypertrie(os.homedir() + '/peerlink/library.db', {valueEncoding: 'json'})
+  // network library public
+  this.datastoreNetworkLibrary = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', {valueEncoding: 'json'})
   // knowledge bundle ledger
   this.datastoreKBL = hypertrie(os.homedir() + '/peerlink/kblpeer.db', {valueEncoding: 'json'})
 }
@@ -163,22 +165,22 @@ PeerStoreWorker.prototype.peerRefContractReplicate = function (key) {
   const localthis = this
   var connectCount = 0
   let rpeer1Key = Buffer.from(key, "hex")
-
-  this.datastoreLibrary = hypertrie(os.homedir() + '/peerlink/library.db', rpeer1Key, {valueEncoding: 'json'})
+  this.datastoreNetworkLibrary.close()
+  this.datastoreNetworkLibrary = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', rpeer1Key, {valueEncoding: 'json'})
 
   this.dataswarm.join(rpeer1Key, {
     lookup: true, // find & connect to peers
     announce: true // optional- announce yourself as a connection target
   })
 
-  this.datastoreLibrary.ready(() => {
+  this.datastoreNetworkLibrary.ready(() => {
     console.log('ready to do replication?')
     localthis.dataswarm.on('connection', function (socket, details) {
       console.log('swarm connect peer')
       connectCount++
       console.log(connectCount)
       // socket.write('three jioned')
-      pump(socket, localthis.datastoreLibrary.replicate(false, { live: true }), socket)
+      pump(socket, localthis.datastoreNetworkLibrary.replicate(false, { live: true }), socket)
       console.log('after replication')
     })
   })
