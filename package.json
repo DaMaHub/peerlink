@@ -1,6 +1,6 @@
 {
   "name": "peerlink",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": false,
   "type": "module",
   "scripts": {
@@ -15,7 +15,7 @@
     "hypercore": "^8.3.0",
     "hyperswarm": "^2.14.0",
     "hypertrie": "^5.0.2",
-    "node-safeflow": "^0.6.8",
+    "node-safeflow": "^0.6.9",
     "pump": "^3.0.0",
     "librarycomposer": "^0.1.7",
     "vue-native-websocket": "^2.0.14",
