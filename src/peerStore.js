@@ -21,10 +21,10 @@ import pump from 'pump'
 var PeerStoreWorker = function () {
   events.EventEmitter.call(this)
   this.feed = {}
-  this.datastore = {}
-  this.datastorePair = {}
+  this.datastorePeerlibrary = {}
+  this.datastoreNL = {}
+  this.datastoreKBL = {}
   this.dataswarm = hyperswarm()
-  this.datastoreK = {}
   this.listdata = []
 }
 
@@ -43,12 +43,10 @@ PeerStoreWorker.prototype.setupDatastores = function () {
   this.feed = hypercore(os.homedir() + '/peerlink/peerlog', {
     valueEncoding: 'json'
   })
-  // peer library
+  // peer library of joined experiments
   this.datastorePeerlibrary = hypertrie(os.homedir() + '/peerlink/peerlibrary.db', {valueEncoding: 'json'})
-  // network library peer
-  this.datastoreLibrary = hypertrie(os.homedir() + '/peerlink/library.db', {valueEncoding: 'json'})
   // network library public
-  this.datastoreNetworkLibrary = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', {valueEncoding: 'json'})
+  this.datastoreNL = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', {valueEncoding: 'json'})
   // knowledge bundle ledger
   this.datastoreKBL = hypertrie(os.homedir() + '/peerlink/kblpeer.db', {valueEncoding: 'json'})
 }
@@ -61,12 +59,10 @@ PeerStoreWorker.prototype.setupDatastores = function () {
 PeerStoreWorker.prototype.getPrivatekey = function (callback) {
   const localthis = this
   let pubkey = ''
-  this.datastorePeerlibrary.ready(() => {
-    pubkey = this.datastoreLibrary.key.toString('hex')
-    console.log('get public key datastore or share')
-    console.log(this.datastoreLibrary.key)
+  this.datastoreNL.ready(() => {
+    pubkey = this.datastoreNL.key.toString('hex')
     // join swarm Network
-    this.dataswarm.join(this.datastoreLibrary.key, {
+    this.dataswarm.join(this.datastoreNL.key, {
       lookup: true, // find & connect to peers
       announce: true // optional- announce yourself as a connection target
     })
@@ -74,7 +70,7 @@ PeerStoreWorker.prototype.getPrivatekey = function (callback) {
     this.dataswarm.on('connection', function (socket, details) {
       // `details` is a simple object that describes the peer we connected to
       console.log('swarm connect peer1')
-      pump(socket, localthis.datastoreLibrary.replicate(true, { live: true }), socket)
+      pump(socket, localthis.datastoreNL.replicate(true, { live: true }), socket)
     })
     callback(pubkey)
   })
@@ -86,7 +82,7 @@ PeerStoreWorker.prototype.getPrivatekey = function (callback) {
 *
 */
 PeerStoreWorker.prototype.libraryGETRefContracts = function (getType, callback) {
-  let databackP = this.datastoreLibrary.list( { ifAvailable: true }, callback)
+  let databackP = this.datastoreNL.list( { ifAvailable: true }, callback)
   return true
 }
 
@@ -110,22 +106,23 @@ PeerStoreWorker.prototype.peerGETRefContracts = function (getType, callback) {
 PeerStoreWorker.prototype.getRefContract = function (getType, refcont, callback) {
   // read
   console.log('peer data datype query')
-  let databack = this.datastorePeerlibrary.list( { ifAvailable: true }, callback)
+  let databack = this.datastoreNL.list( { ifAvailable: true }, callback)
   return true
 }
 
 
 /**
-* save new Reference Contract
-* @method peerStoreRefContract
+* save new Reference Contract network library
+* @method libraryStoreRefContract
 *
 */
 PeerStoreWorker.prototype.libraryStoreRefContract = function (refContract) {
   // save
+  console.log('save entry')
   const localthis = this
-  this.datastoreLibrary.put(refContract.hash, refContract.contract, function () {
+  this.datastoreNL.put(refContract.hash, refContract.contract, function () {
     console.log('saved hypertrie OK')
-    localthis.datastoreLibrary.get(refContract.hash, console.log)
+    // localthis.datastoreNL.get(refContract.hash, console.log)
   })
   let returnMessage = {}
   returnMessage.stored = true
@@ -156,7 +153,7 @@ PeerStoreWorker.prototype.peerStoreRefContract = function (refContract) {
 }
 
 /**
-* replicate an explicit peer ref contract datastore
+* replicate an explicit peer library ref contract datastore
 * @method peerRefContractReplicate
 *
 */
@@ -165,22 +162,20 @@ PeerStoreWorker.prototype.peerRefContractReplicate = function (key) {
   const localthis = this
   var connectCount = 0
   let rpeer1Key = Buffer.from(key, "hex")
-  this.datastoreNetworkLibrary.close()
-  this.datastoreNetworkLibrary = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', rpeer1Key, {valueEncoding: 'json'})
+  // this.datastoreNL = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', rpeer1Key, {valueEncoding: 'json'})
 
   this.dataswarm.join(rpeer1Key, {
     lookup: true, // find & connect to peers
     announce: true // optional- announce yourself as a connection target
   })
 
-  this.datastoreNetworkLibrary.ready(() => {
+  this.datastoreNL.ready(() => {
     console.log('ready to do replication?')
     localthis.dataswarm.on('connection', function (socket, details) {
       console.log('swarm connect peer')
       connectCount++
       console.log(connectCount)
-      // socket.write('three jioned')
-      pump(socket, localthis.datastoreNetworkLibrary.replicate(false, { live: true }), socket)
+      pump(socket, localthis.datastoreNL.replicate(false, { live: true }), socket)
       console.log('after replication')
     })
   })

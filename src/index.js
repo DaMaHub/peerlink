@@ -19,6 +19,10 @@ const server = http.createServer((request, response) => {
   // server we don't have to implement anything.
 })
 
+server.on('error', function(e) {
+  console.log('problem with request: ' + e.stack);
+})
+
 server.listen(9888, () => {
   console.log('listening on *:9888')
   if (fs.existsSync(os.homedir() + '/peerlink')) {
@@ -81,9 +85,9 @@ wsServer.on('request', request => {
     }
 
     function callbacklibrary (err, data) {
-      console.log('library callback')
-      console.log(data)
-      console.log(err)
+      // console.log('library callback')
+      // console.log(data)
+      // console.log(err)
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
       libraryData.type = 'publiclibrary'
@@ -98,9 +102,9 @@ wsServer.on('request', request => {
       connection.sendUTF(JSON.stringify(libraryData))
     }
     function callbackPeer (err, data) {
-      console.log('peer callback')
-      console.log(data)
-      console.log(err)
+      // console.log('peer callback')
+      // console.log(data)
+      // console.log(err)
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
       libraryData.type = 'peerprivate'
@@ -177,6 +181,8 @@ wsServer.on('request', request => {
             // save a new refContract
             const newRefContract = o.refContract
             const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
+            console.log('saved datatype')
+            console.log(savedFeedback)
             connection.sendUTF(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'compute') {
@@ -372,7 +378,13 @@ wsServer.on('request', request => {
       }
     }
   })
-
   connection.on('close', connection => {
   })
+  connection.on('error', connection => {
+    console.log('socket eeeerrrorrrr')
+  })
+})
+
+process.on('unhandledRejection', function(err) {
+  console.log(err);
 })
