@@ -74,6 +74,14 @@ wsServer.on('request', request => {
     data.type = 'updateEntityRange'
     connection.sendUTF(JSON.stringify(data))
   })
+  liveSafeFLOW.on('storePeerResults', (data) => {
+    console.log('results ECS passed$$$$$$$$$')
+    const savedFeedback = peerStoreLive.peerStoreResults(data)
+  })
+  liveSafeFLOW.on('kbledgerEntry', (data) => {
+    console.log('store KBL entry')
+    // const savedFeedback = peerStoreLive.peerKBLentry(data)
+  })
 
   connection.on('message', async msg => {
     // kbidStoreLive = new KBIDstoreWorker(this.datastoreKBL)

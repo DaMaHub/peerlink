@@ -47,6 +47,8 @@ PeerStoreWorker.prototype.setupDatastores = function () {
   this.datastorePeerlibrary = hypertrie(os.homedir() + '/peerlink/peerlibrary.db', {valueEncoding: 'json'})
   // network library public
   this.datastoreNL = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', {valueEncoding: 'json'})
+  // results ledger
+  this.datastoreResults = hypertrie(os.homedir() + '/peerlink/resultspeer.db', {valueEncoding: 'json'})
   // knowledge bundle ledger
   this.datastoreKBL = hypertrie(os.homedir() + '/peerlink/kblpeer.db', {valueEncoding: 'json'})
 }
@@ -143,6 +145,46 @@ PeerStoreWorker.prototype.peerStoreRefContract = function (refContract) {
   this.datastorePeerlibrary.put(refContract.hash, refContract.contract, function () {
     console.log('saved hypertrie OK')
     localthis.datastorePeerlibrary.get(refContract.hash, console.log)
+  })
+  let returnMessage = {}
+  returnMessage.stored = true
+  returnMessage.type = refContract.reftype
+  returnMessage.key = refContract.hash
+  returnMessage.contract = refContract.contract
+  return returnMessage
+}
+
+/**
+* save results from ECS
+* @method peerStoreResults
+*
+*/
+PeerStoreWorker.prototype.peerStoreResults = function (refContract) {
+  // save
+  const localthis = this
+  this.datastoreResults.put(refContract.hash, refContract.data, function () {
+    console.log('saved hypertrie OK')
+    localthis.datastoreResults.get(refContract.hash, console.log)
+  })
+  let returnMessage = {}
+  returnMessage.stored = true
+  returnMessage.type = refContract.reftype
+  returnMessage.key = refContract.hash
+  returnMessage.contract = refContract.contract
+  return returnMessage
+}
+
+/**
+* save kbledger entry
+* @method peerKBLentry
+*
+*/
+PeerStoreWorker.prototype.peerKBLentry = function (refContract) {
+  // save
+  const localthis = this
+  this.datastoreKBL.put(refContract.hash, refContract.data, function () {
+    console.log('saved hypertrie OK')
+    localthis.datastoreKBL.get(refContract.hash, console.log)
   })
   let returnMessage = {}
   returnMessage.stored = true
