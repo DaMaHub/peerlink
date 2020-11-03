@@ -176,7 +176,7 @@ wsServer.on('request', request => {
           const pubkey = peerStoreLive.getPrivatekey(callbackKey)
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
-          const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey)
+          const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
         } else if (o.reftype.trim() === 'publiclibrary') {
           console.log('public libary get')
           peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
