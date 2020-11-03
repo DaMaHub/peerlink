@@ -139,6 +139,8 @@ wsServer.on('request', request => {
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.network, o.settings)
           // if verified then load starting experiments into ECS-safeFLOW
           connection.sendUTF(JSON.stringify(authStatus))
+          // check the public network library
+          peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
         } else if (o.action === 'networkexperiment') {
           // start gather data, perform compute, formatting etc.
           async function expCallback (err, data) {

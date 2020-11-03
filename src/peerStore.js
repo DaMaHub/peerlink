@@ -79,6 +79,62 @@ PeerStoreWorker.prototype.getPrivatekey = function (callback) {
 }
 
 /**
+* replicate an explicit peer library ref contract datastore
+* @method peerRefContractReplicate
+*
+*/
+PeerStoreWorker.prototype.peerRefContractReplicate = function (key, callback) {
+  // replicate
+  const localthis = this
+  var connectCount = 0
+  let rpeer1Key = Buffer.from(key, "hex")
+  // has the peers key and datastore been setup already?
+  if (this.datastoreNL2 === undefined && key !== 'peer') {
+    localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink4/librarynetwork2.db', rpeer1Key, {valueEncoding: 'json'})
+    localthis.dataswarm.join(rpeer1Key, {
+      lookup: true, // find & connect to peers
+      announce: true // optional- announce yourself as a connection target
+    })
+    this.datastoreNL2.ready(() => {
+      console.log('ready to do replication?')
+      localthis.dataswarm.on('connection', function (socket, details) {
+        console.log('swarm connect peer')
+        connectCount++
+        console.log(connectCount)
+        pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
+        console.log('after replication')
+        localthis.datastoreNL2.list( { ifAvailable: true }, callback)
+      })
+    })
+  } else if (key === 'peer') {
+    console.log('setup public data store and return refcontracts')
+    if (this.datastoreNL2 === undefined) {
+      console.log('peer PNL NOT setup')
+      localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink4/librarynetwork2.db', {valueEncoding: 'json'})
+      localthis.datastoreNL2.list( { ifAvailable: true }, callback)
+    } else {
+      console.log('already PNL setup e.g library TK')
+      localthis.datastoreNL2.list( { ifAvailable: true }, callback)
+    }
+  } else {
+    console.log('peer shared datastore setup already')
+    console.log('list all data hold in store')
+    localthis.datastoreNL2.list( { ifAvailable: true }, callback)
+  }
+}
+
+/**
+* replicate network library from peer with own local public library
+* @method localNetworkLibrarySync
+*
+*/
+PeerStoreWorker.prototype.localNetworkLibrarySync = function (nlr, nw, opts) {
+  console.log('function called')
+  const stream = nlr.replicate(true, opts)
+  return stream.pipe(nw.replicate(false, opts)).pipe(stream)
+}
+
+/**
 * get the network library reference contracts - all for now
 * @method libraryGETRefContracts
 *
@@ -192,35 +248,6 @@ PeerStoreWorker.prototype.peerKBLentry = function (refContract) {
   returnMessage.key = refContract.hash
   returnMessage.contract = refContract.contract
   return returnMessage
-}
-
-/**
-* replicate an explicit peer library ref contract datastore
-* @method peerRefContractReplicate
-*
-*/
-PeerStoreWorker.prototype.peerRefContractReplicate = function (key) {
-  // replicate
-  const localthis = this
-  var connectCount = 0
-  let rpeer1Key = Buffer.from(key, "hex")
-  // this.datastoreNL = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', rpeer1Key, {valueEncoding: 'json'})
-
-  this.dataswarm.join(rpeer1Key, {
-    lookup: true, // find & connect to peers
-    announce: true // optional- announce yourself as a connection target
-  })
-
-  this.datastoreNL.ready(() => {
-    console.log('ready to do replication?')
-    localthis.dataswarm.on('connection', function (socket, details) {
-      console.log('swarm connect peer')
-      connectCount++
-      console.log(connectCount)
-      pump(socket, localthis.datastoreNL.replicate(false, { live: true }), socket)
-      console.log('after replication')
-    })
-  })
 }
 
 export default PeerStoreWorker
