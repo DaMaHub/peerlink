@@ -90,7 +90,7 @@ PeerStoreWorker.prototype.peerRefContractReplicate = function (key, callback) {
   let rpeer1Key = Buffer.from(key, "hex")
   // has the peers key and datastore been setup already?
   if (this.datastoreNL2 === undefined && key !== 'peer') {
-    localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink4/librarynetwork2.db', rpeer1Key, {valueEncoding: 'json'})
+    localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink/librarynetwork2.db', rpeer1Key, {valueEncoding: 'json'})
     localthis.dataswarm.join(rpeer1Key, {
       lookup: true, // find & connect to peers
       announce: true // optional- announce yourself as a connection target
@@ -110,7 +110,7 @@ PeerStoreWorker.prototype.peerRefContractReplicate = function (key, callback) {
     console.log('setup public data store and return refcontracts')
     if (this.datastoreNL2 === undefined) {
       console.log('peer PNL NOT setup')
-      localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink4/librarynetwork2.db', {valueEncoding: 'json'})
+      localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink/librarynetwork2.db', {valueEncoding: 'json'})
       localthis.datastoreNL2.list( { ifAvailable: true }, callback)
     } else {
       console.log('already PNL setup e.g library TK')
