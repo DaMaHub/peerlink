@@ -107,18 +107,14 @@ PeerStoreWorker.prototype.peerRefContractReplicate = function (key, callback) {
       })
     })
   } else if (key === 'peer') {
-    console.log('setup public data store and return refcontracts')
     if (this.datastoreNL2 === undefined) {
-      console.log('peer PNL NOT setup')
       localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink/librarynetwork2.db', {valueEncoding: 'json'})
       localthis.datastoreNL2.list( { ifAvailable: true }, callback)
     } else {
-      console.log('already PNL setup e.g library TK')
       localthis.datastoreNL2.list( { ifAvailable: true }, callback)
     }
   } else {
     console.log('peer shared datastore setup already')
-    console.log('list all data hold in store')
     localthis.datastoreNL2.list( { ifAvailable: true }, callback)
   }
 }
@@ -129,7 +125,6 @@ PeerStoreWorker.prototype.peerRefContractReplicate = function (key, callback) {
 *
 */
 PeerStoreWorker.prototype.localNetworkLibrarySync = function (nlr, nw, opts) {
-  console.log('function called')
   const stream = nlr.replicate(true, opts)
   return stream.pipe(nw.replicate(false, opts)).pipe(stream)
 }
@@ -151,7 +146,6 @@ PeerStoreWorker.prototype.libraryGETRefContracts = function (getType, callback) 
 */
 PeerStoreWorker.prototype.peerGETRefContracts = function (getType, callback) {
   // read
-  console.log('peer data datype query')
   let databack = this.datastorePeerlibrary.list( { ifAvailable: true }, callback)
   return true
 }
@@ -163,7 +157,6 @@ PeerStoreWorker.prototype.peerGETRefContracts = function (getType, callback) {
 */
 PeerStoreWorker.prototype.getRefContract = function (getType, refcont, callback) {
   // read
-  console.log('peer data datype query')
   let databack = this.datastoreNL.list( { ifAvailable: true }, callback)
   return true
 }
@@ -176,7 +169,6 @@ PeerStoreWorker.prototype.getRefContract = function (getType, refcont, callback)
 */
 PeerStoreWorker.prototype.libraryStoreRefContract = function (refContract) {
   // save
-  console.log('save entry')
   const localthis = this
   this.datastoreNL.put(refContract.hash, refContract.contract, function () {
     console.log('saved hypertrie OK')
@@ -200,7 +192,7 @@ PeerStoreWorker.prototype.peerStoreRefContract = function (refContract) {
   const localthis = this
   this.datastorePeerlibrary.put(refContract.hash, refContract.contract, function () {
     console.log('saved hypertrie OK')
-    localthis.datastorePeerlibrary.get(refContract.hash, console.log)
+    // localthis.datastorePeerlibrary.get(refContract.hash, console.log)
   })
   let returnMessage = {}
   returnMessage.stored = true
@@ -220,7 +212,7 @@ PeerStoreWorker.prototype.peerStoreResults = function (refContract) {
   const localthis = this
   this.datastoreResults.put(refContract.hash, refContract.data, function () {
     console.log('saved hypertrie OK')
-    localthis.datastoreResults.get(refContract.hash, console.log)
+    // localthis.datastoreResults.get(refContract.hash, console.log)
   })
   let returnMessage = {}
   returnMessage.stored = true
@@ -240,7 +232,7 @@ PeerStoreWorker.prototype.peerKBLentry = function (refContract) {
   const localthis = this
   this.datastoreKBL.put(refContract.hash, refContract.data, function () {
     console.log('saved hypertrie OK')
-    localthis.datastoreKBL.get(refContract.hash, console.log)
+    // localthis.datastoreKBL.get(refContract.hash, console.log)
   })
   let returnMessage = {}
   returnMessage.stored = true

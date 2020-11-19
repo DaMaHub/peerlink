@@ -31,7 +31,6 @@ util.inherits(KBIDStoreWorker, events.EventEmitter)
 */
 KBIDStoreWorker.prototype.peerGETkbids = function (getType, callback) {
   // read
-  console.log('peer KBID query')
   let databack = this.datastore.list( { ifAvailable: true }, callback)
   return true
 }
@@ -43,8 +42,6 @@ KBIDStoreWorker.prototype.peerGETkbids = function (getType, callback) {
 */
 KBIDStoreWorker.prototype.peerStoreKBIDentry = function (refContract) {
   // save
-  console.log('save new KBID entry')
-  console.log(refContract)
   const localthis = this
   this.datastore.put(refContract.hash, refContract.contract, function () {
     console.log('saved KBID hypertrie OK')

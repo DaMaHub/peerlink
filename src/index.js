@@ -55,32 +55,30 @@ wsServer.on('request', request => {
   console.log('someone connected')
   // listenr for data back from ECS
   liveSafeFLOW.on('displayEntity', (data) => {
-    console.log('databackfrom ECS')
     data.type = 'newEntity'
     connection.sendUTF(JSON.stringify(data))
   })
   liveSafeFLOW.on('displayEntityRange', (data) => {
-    console.log('databackfrom ECS')
     data.type = 'newEntityRange'
     connection.sendUTF(JSON.stringify(data))
   })
   liveSafeFLOW.on('displayUpdateEntity', (data) => {
-    console.log('databackfrom ECS')
     data.type = 'updateEntity'
     connection.sendUTF(JSON.stringify(data))
   })
   liveSafeFLOW.on('displayUpdateEntityRange', (data) => {
-    console.log('databackfrom ECS')
     data.type = 'updateEntityRange'
     connection.sendUTF(JSON.stringify(data))
   })
+  liveSafeFLOW.on('updateModule', (data) => {
+    let moduleRefContract = liveLibrary.liveComposer.moduleComposer(data, 'update')
+    const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
+  })
   liveSafeFLOW.on('storePeerResults', (data) => {
-    console.log('results ECS passed$$$$$$$$$')
     const savedFeedback = peerStoreLive.peerStoreResults(data)
   })
   liveSafeFLOW.on('kbledgerEntry', (data) => {
-    console.log('store KBL entry')
-    // const savedFeedback = peerStoreLive.peerKBLentry(data)
+    const savedFeedback = peerStoreLive.peerKBLentry(data)
   })
 
   connection.on('message', async msg => {
@@ -93,9 +91,6 @@ wsServer.on('request', request => {
     }
 
     function callbacklibrary (err, data) {
-      // console.log('library callback')
-      // console.log(data)
-      // console.log(err)
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
       libraryData.type = 'publiclibrary'
@@ -110,9 +105,6 @@ wsServer.on('request', request => {
       connection.sendUTF(JSON.stringify(libraryData))
     }
     function callbackPeer (err, data) {
-      // console.log('peer callback')
-      // console.log(data)
-      // console.log(err)
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
       libraryData.type = 'peerprivate'
@@ -129,10 +121,7 @@ wsServer.on('request', request => {
     // logic for incoming request flows
     if (msg.type === 'utf8') {
       const o = JSON.parse(msg.utf8Data)
-      console.log('--incoming message-----')
-      console.log(o)
       if (o.reftype.trim() === 'hello') {
-        console.log('conversaton')
         connection.sendUTF(JSON.stringify('talk to CALE'))
       } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
         if (o.action === 'auth') {
@@ -144,7 +133,6 @@ wsServer.on('request', request => {
         } else if (o.action === 'networkexperiment') {
           // start gather data, perform compute, formatting etc.
           async function expCallback (err, data) {
-            console.log('epxeriment calleback')
             console.log(err)
             let matchContract = {}
             for (let ditem of data) {
@@ -166,7 +154,6 @@ wsServer.on('request', request => {
           connection.sendUTF(JSON.stringify(summaryECS))
         } else if (o.action === 'updatenetworkexperiment') {
           // update to existing live ECS entity
-          console.log('PPRLINK --update to existing ECS entity')
           let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
         }
       } else if (o.type.trim() === 'library' ) {
@@ -178,10 +165,8 @@ wsServer.on('request', request => {
           // two peer syncing reference contracts
           const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
         } else if (o.reftype.trim() === 'publiclibrary') {
-          console.log('public libary get')
           peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
         } else if (o.reftype.trim() === 'privatelibrary') {
-          console.log('private library tget')
           peerStoreLive.peerGETRefContracts('all', callbackPeer)
         } else if (o.reftype.trim() === 'datatype') {
           // query peer hypertrie for datatypes
@@ -191,8 +176,6 @@ wsServer.on('request', request => {
             // save a new refContract
             const newRefContract = o.refContract
             const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
-            console.log('saved datatype')
-            console.log(savedFeedback)
             connection.sendUTF(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'compute') {
@@ -270,7 +253,6 @@ wsServer.on('request', request => {
           // for each module in experiment, add peer selections
           // loop over list of module contract to make genesis ie first
           for (let mh of o.data.exp.modules) {
-            console.log(mh)
             // prepare new modules for this peer  ledger
             let peerModules = {}
             // look up module template genesis contract
@@ -291,8 +273,6 @@ wsServer.on('request', request => {
               peerModules.settings = o.data.options.visualise
             }
             let moduleRefContract = liveLibrary.liveComposer.moduleComposer(peerModules, 'join')
-            console.log('parepared module')
-            console.log(moduleRefContract)
             const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
             moduleJoinedList.push(savedFeedback.key)
             // form key value refcont structure
