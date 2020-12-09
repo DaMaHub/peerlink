@@ -70,6 +70,10 @@ wsServer.on('request', request => {
     data.type = 'updateEntityRange'
     connection.sendUTF(JSON.stringify(data))
   })
+  liveSafeFLOW.on('displayEmpty', (data) => {
+    data.type = 'displayEmpty'
+    connection.sendUTF(JSON.stringify(data))
+  })
   liveSafeFLOW.on('updateModule', (data) => {
     let moduleRefContract = liveLibrary.liveComposer.moduleComposer(data, 'update')
     const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
@@ -161,6 +165,8 @@ wsServer.on('request', request => {
         if (o.reftype.trim() === 'viewpublickey') {
           // two peer syncing reference contracts
           const pubkey = peerStoreLive.getPrivatekey(callbackKey)
+        } else if (o.reftype.trim() === 'keymanagement') {
+          peerStoreLive.keyManagement(callbackKey)
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
           const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)

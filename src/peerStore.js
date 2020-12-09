@@ -43,6 +43,8 @@ PeerStoreWorker.prototype.setupDatastores = function () {
   this.feed = hypercore(os.homedir() + '/peerlink/peerlog', {
     valueEncoding: 'json'
   })
+  // peer warm cold connections
+  this.datastorePeers = hypertrie(os.homedir() + '/peerlink/peernetwork.db', {valueEncoding: 'json'})
   // peer library of joined experiments
   this.datastorePeerlibrary = hypertrie(os.homedir() + '/peerlink/peerlibrary.db', {valueEncoding: 'json'})
   // network library public
@@ -51,6 +53,40 @@ PeerStoreWorker.prototype.setupDatastores = function () {
   this.datastoreResults = hypertrie(os.homedir() + '/peerlink/resultspeer.db', {valueEncoding: 'json'})
   // knowledge bundle ledger
   this.datastoreKBL = hypertrie(os.homedir() + '/peerlink/kblpeer.db', {valueEncoding: 'json'})
+}
+
+/**
+* return public keys for key managment
+* @method keyManagement
+*
+*/
+PeerStoreWorker.prototype.keyManagement = function (callback) {
+  console.log('list public keys')
+  let pubkeys = {}
+  this.datastorePeers.ready(() => {
+    pubkeys.peernetwork = this.datastorePeers.key.toString('hex')
+    callback(pubkeys)
+  })
+  let pubkeys2 = {}
+  this.datastorePeerlibrary.ready(() => {
+    pubkeys2.peerlibrary = this.datastorePeerlibrary.key.toString('hex')
+    callback(pubkeys2)
+  })
+  let pubkeys3 = {}
+  this.datastoreNL.ready(() => {
+    pubkeys3.librarynetwork = this.datastoreNL.key.toString('hex')
+    callback(pubkeys3)
+  })
+  let pubkeys4 = {}
+  this.datastoreResults.ready(() => {
+    pubkeys4.resultspeer = this.datastoreResults.key.toString('hex')
+    callback(pubkeys4)
+  })
+  let pubkeys5 = {}
+  this.datastoreKBL.ready(() => {
+    pubkeys5.kblpeer = this.datastoreKBL.key.toString('hex')
+    callback(pubkeys5)
+  })
 }
 
 /**
