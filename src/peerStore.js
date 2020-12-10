@@ -61,7 +61,6 @@ PeerStoreWorker.prototype.setupDatastores = function () {
 *
 */
 PeerStoreWorker.prototype.keyManagement = function (callback) {
-  console.log('list public keys')
   let pubkeys = {}
   this.datastorePeers.ready(() => {
     pubkeys.peernetwork = this.datastorePeers.key.toString('hex')
@@ -86,6 +85,31 @@ PeerStoreWorker.prototype.keyManagement = function (callback) {
   this.datastoreKBL.ready(() => {
     pubkeys5.kblpeer = this.datastoreKBL.key.toString('hex')
     callback(pubkeys5)
+  })
+}
+
+/**
+* return list of warm peers
+* @method listWarmPeers
+*
+*/
+PeerStoreWorker.prototype.listWarmPeers = function (callback) {
+  this.datastorePeers.list( { ifAvailable: true }, (err, data) => {
+    callback(data)
+  })
+}
+
+/**
+* return confirmation peer added and saved
+* @method addPeer
+*
+*/
+PeerStoreWorker.prototype.addPeer = function (newPeer, callback) {
+  let localthis = this
+  this.datastorePeers.put(newPeer.publickey, newPeer, function () {
+    localthis.datastorePeers.get(newPeer.publickey, (err, data) => {
+        callback(data)
+      })
   })
 }
 

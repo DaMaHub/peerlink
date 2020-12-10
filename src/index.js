@@ -86,14 +86,24 @@ wsServer.on('request', request => {
   })
 
   connection.on('message', async msg => {
-    // kbidStoreLive = new KBIDstoreWorker(this.datastoreKBL)
     function callbackKey (data) {
       let pubkeyData = {}
       pubkeyData.type = 'publickey'
       pubkeyData.pubkey = data
       connection.sendUTF(JSON.stringify(pubkeyData))
     }
-
+    function callbackPeerNetwork (data) {
+      let peerNData = {}
+      peerNData.type = 'new-peer'
+      peerNData.data = data
+      connection.sendUTF(JSON.stringify(peerNData))
+    }
+    function callbackWarmPeers (data) {
+      let peerNData = {}
+      peerNData.type = 'warm-peers'
+      peerNData.data = data
+      connection.sendUTF(JSON.stringify(peerNData))
+    }
     function callbacklibrary (err, data) {
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
@@ -167,6 +177,10 @@ wsServer.on('request', request => {
           const pubkey = peerStoreLive.getPrivatekey(callbackKey)
         } else if (o.reftype.trim() === 'keymanagement') {
           peerStoreLive.keyManagement(callbackKey)
+        } else if (o.reftype.trim() === 'peer-add') {
+          peerStoreLive.addPeer(o.data, callbackPeerNetwork)
+        } else if (o.reftype.trim() === 'warm-peers') {
+          peerStoreLive.listWarmPeers(callbackWarmPeers)
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
           const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
