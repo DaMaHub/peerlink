@@ -92,6 +92,12 @@ wsServer.on('request', request => {
       pubkeyData.pubkey = data
       connection.sendUTF(JSON.stringify(pubkeyData))
     }
+    function callbackOpenLibrary (data) {
+      let pubkeyData = {}
+      pubkeyData.type = 'open-library'
+      pubkeyData.data = data
+      connection.sendUTF(JSON.stringify(pubkeyData))
+    }
     function callbackPeerNetwork (data) {
       let peerNData = {}
       peerNData.type = 'new-peer'
@@ -174,7 +180,10 @@ wsServer.on('request', request => {
         // library routing
         if (o.reftype.trim() === 'viewpublickey') {
           // two peer syncing reference contracts
-          const pubkey = peerStoreLive.getPrivatekey(callbackKey)
+          const pubkey = peerStoreLive.singlePublicKey(callbackKey)
+        } else if (o.reftype.trim() === 'openlibrary') {
+          // two peer syncing reference contracts
+          const pubkey = peerStoreLive.openLibrary(o.data, callbackOpenLibrary)
         } else if (o.reftype.trim() === 'keymanagement') {
           peerStoreLive.keyManagement(callbackKey)
         } else if (o.reftype.trim() === 'peer-add') {
