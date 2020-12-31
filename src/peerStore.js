@@ -119,14 +119,11 @@ PeerStoreWorker.prototype.addPeer = function (newPeer, callback) {
 *
 */
 PeerStoreWorker.prototype.singlePublicKey = function (pk, callback) {
-  console.log('sync open ')
   const localthis = this
   let liveSwarm = hyperswarm()
   let pubkey = ''
   this.datastoreNL.ready(() => {
     pubkey = this.datastoreNL.key.toString('hex')
-    console.log(pubkey)
-    console.log(this.datastoreNL.key)
     // join swarm Network
     liveSwarm.join(this.datastoreNL.key, {
       lookup: true, // find & connect to peers
@@ -148,7 +145,6 @@ PeerStoreWorker.prototype.singlePublicKey = function (pk, callback) {
 *
 */
 PeerStoreWorker.prototype.openLibrary = function (pk, callback) {
-  console.log('open library')
   // what datastore to open?
   // hardwired to public network library for now
   const localthis = this

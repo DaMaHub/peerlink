@@ -180,7 +180,7 @@ wsServer.on('request', request => {
         // library routing
         if (o.reftype.trim() === 'viewpublickey') {
           // two peer syncing reference contracts
-          const pubkey = peerStoreLive.singlePublicKey(callbackKey)
+          const pubkey = peerStoreLive.singlePublicKey('', callbackKey)
         } else if (o.reftype.trim() === 'openlibrary') {
           // two peer syncing reference contracts
           const pubkey = peerStoreLive.openLibrary(o.data, callbackOpenLibrary)
