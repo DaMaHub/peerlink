@@ -152,8 +152,6 @@ PeerStoreWorker.prototype.openLibrary = function (pk, callback) {
   let pubkey = ''
   this.datastoreNL.ready(() => {
     pubkey = this.datastoreNL.key.toString('hex')
-    console.log(pubkey)
-    console.log(this.datastoreNL.key)
     // join swarm Network
     liveSwarm.join(this.datastoreNL.key, {
       lookup: true, // find & connect to peers
@@ -253,6 +251,18 @@ PeerStoreWorker.prototype.getRefContract = function (getType, refcont, callback)
   return true
 }
 
+/**
+* lookup specific result UUID
+* @method peerStoreCheckResults
+*
+*/
+PeerStoreWorker.prototype.peerStoreCheckResults = function (dataPrint, callback) {
+  this.datastoreResults.get(dataPrint.resultuuid, function (err, node) {
+    callback(dataPrint, err, node)
+  })
+  // this.datastoreResults.list( { ifAvailable: true }, callback)
+  return true
+}
 
 /**
 * save new Reference Contract network library
@@ -263,7 +273,7 @@ PeerStoreWorker.prototype.libraryStoreRefContract = function (refContract) {
   // save
   const localthis = this
   this.datastoreNL.put(refContract.hash, refContract.contract, function () {
-    console.log('saved hypertrie OK')
+    // console.log('saved hypertrie OK')
     // localthis.datastoreNL.get(refContract.hash, console.log)
   })
   let returnMessage = {}
@@ -283,7 +293,7 @@ PeerStoreWorker.prototype.peerStoreRefContract = function (refContract) {
   // save
   const localthis = this
   this.datastorePeerlibrary.put(refContract.hash, refContract.contract, function () {
-    console.log('saved hypertrie OK')
+    // console.log('saved hypertrie OK')
     // localthis.datastorePeerlibrary.get(refContract.hash, console.log)
   })
   let returnMessage = {}
@@ -303,7 +313,7 @@ PeerStoreWorker.prototype.peerStoreResults = function (refContract) {
   // save
   const localthis = this
   this.datastoreResults.put(refContract.hash, refContract.data, function () {
-    console.log('saved hypertrie OK')
+    // console.log('saved hypertrie OK')
     // localthis.datastoreResults.get(refContract.hash, console.log)
   })
   let returnMessage = {}
@@ -323,7 +333,7 @@ PeerStoreWorker.prototype.peerKBLentry = function (refContract) {
   // save
   const localthis = this
   this.datastoreKBL.put(refContract.hash, refContract.data, function () {
-    console.log('saved hypertrie OK')
+    // console.log('saved hypertrie OK')
     // localthis.datastoreKBL.get(refContract.hash, console.log)
   })
   let returnMessage = {}

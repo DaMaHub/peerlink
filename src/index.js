@@ -10,9 +10,9 @@ import pkg from 'websocket'
 const WebSocketServer = pkg.server
 
 const liveLibrary = new LibComposer()
+let peerStoreLive =  new DatastoreWorker() // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
+let kbidStoreLive // not in use
 const liveSafeFLOW = new SafeFLOW()
-let peerStoreLive =  new DatastoreWorker()
-let kbidStoreLive
 let libraryData = {}
 const server = http.createServer((request, response) => {
   // process HTTP request. Since we're writing just WebSockets
@@ -52,7 +52,20 @@ let wsServer = new WebSocketServer({
 // WebSocket server
 wsServer.on('request', request => {
   let connection = request.accept(null, request.origin)
-  console.log('someone connected')
+  console.log('peer connected')
+  // call back from results etc needing to get back to safeFLOW-ecs
+  function resultsCallback (entity, err, data) {
+    let resultMatch = {}
+    if (data !== null) {
+      resultMatch.entity = entity
+      resultMatch.data = data
+    } else {
+      resultMatch.entity = entity
+      resultMatch.data = false
+    }
+    liveSafeFLOW.resultsFlow(resultMatch)
+  }
+
   // listenr for data back from ECS
   liveSafeFLOW.on('displayEntity', (data) => {
     data.type = 'newEntity'
@@ -60,6 +73,7 @@ wsServer.on('request', request => {
   })
   liveSafeFLOW.on('displayEntityRange', (data) => {
     data.type = 'newEntityRange'
+    console.log('new rage out PEERLINK')
     connection.sendUTF(JSON.stringify(data))
   })
   liveSafeFLOW.on('displayUpdateEntity', (data) => {
@@ -80,6 +94,9 @@ wsServer.on('request', request => {
   })
   liveSafeFLOW.on('storePeerResults', (data) => {
     const savedFeedback = peerStoreLive.peerStoreResults(data)
+  })
+  liveSafeFLOW.on('checkPeerResults', (data) => {
+    const matchResult = peerStoreLive.peerStoreCheckResults(data, resultsCallback)
   })
   liveSafeFLOW.on('kbledgerEntry', (data) => {
     const savedFeedback = peerStoreLive.peerKBLentry(data)
@@ -112,6 +129,8 @@ wsServer.on('request', request => {
     }
     function callbacklibrary (err, data) {
       // pass to sort data into ref contract types
+      // console.log('call back public library')
+      // console.log(data)
       libraryData.data = 'contracts'
       libraryData.type = 'publiclibrary'
       const segmentedRefContracts = liveLibrary.liveRefcontUtility.refcontractSperate(data)
@@ -154,12 +173,15 @@ wsServer.on('request', request => {
           // start gather data, perform compute, formatting etc.
           async function expCallback (err, data) {
             console.log(err)
+            // console.log('network experiment DATA')
+            // console.log(data)
             let matchContract = {}
             for (let ditem of data) {
               if (ditem === '1234' ) {
                 matchContract = ditem
               }
             }
+            // console.log(matchContract)
             let ecsData = await liveSafeFLOW.startFlow(matchContract)
             let summaryECS = {}
             summaryECS.type = 'ecssummary'
@@ -194,6 +216,7 @@ wsServer.on('request', request => {
           // two peer syncing reference contracts
           const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
         } else if (o.reftype.trim() === 'publiclibrary') {
+          // console.log('public library')
           peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
         } else if (o.reftype.trim() === 'privatelibrary') {
           peerStoreLive.peerGETRefContracts('all', callbackPeer)
@@ -296,7 +319,7 @@ wsServer.on('request', request => {
               peerModules.compute = mh.value.info.refcont
               peerModules.controls = o.data.options.compute
               peerModules.settings = o.data.options.visualise
-            } else if (mh.value.info.moduleinfo.name === 'visualise') {
+              } else if (mh.value.info.moduleinfo.name === 'visualise') {
               peerModules.type = 'visualise'
               peerModules.visualise = mh.value.info.refcont
               peerModules.settings = o.data.options.visualise
