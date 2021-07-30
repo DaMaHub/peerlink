@@ -73,7 +73,6 @@ wsServer.on('request', request => {
   })
   liveSafeFLOW.on('displayEntityRange', (data) => {
     data.type = 'newEntityRange'
-    console.log('new rage out PEERLINK')
     connection.sendUTF(JSON.stringify(data))
   })
   liveSafeFLOW.on('displayUpdateEntity', (data) => {
