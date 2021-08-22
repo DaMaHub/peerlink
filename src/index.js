@@ -429,3 +429,5 @@ wsServer.on('request', request => {
 process.on('unhandledRejection', function(err) {
   console.log(err);
 })
+console.log('memoryPrint Start')
+console.log(process.memoryUsage())
