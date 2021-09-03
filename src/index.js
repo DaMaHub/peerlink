@@ -420,14 +420,21 @@ wsServer.on('request', request => {
     }
   })
   connection.on('close', connection => {
+    console.log('close connection')
+    /* liveLibrary = {}
+    peerStoreLive =  {}
+    liveSafeFLOW = {} */
   })
   connection.on('error', connection => {
     console.log('socket eeeerrrorrrr')
+    liveLibrary = {}
+    peerStoreLive =  {}
+    liveSafeFLOW = {}
   })
 })
 
 process.on('unhandledRejection', function(err) {
   console.log(err);
 })
-console.log('memoryPrint Start')
-console.log(process.memoryUsage())
+// console.log('memoryPrint Start')
+// console.log(process.memoryUsage())
