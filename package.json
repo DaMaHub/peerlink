@@ -3,29 +3,38 @@
   "version": "0.2.1",
   "private": false,
   "type": "module",
+  "bin": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nw src/index.js",
-    "prod": "nwbuild --platforms win32,win64,osx64,linux32,linux64 --buildDir dist/ src/index.js",
-    "build": "babel src -d babout"
+    "dev": "",
+    "prod": "",
+    "clean": "rm -rf dist build",
+    "transpile": "esbuild --platform=node --bundle --outfile=build/serverfiles.js src/index.js",
+    "compile": "pkg  --public --targets latest-linux-x64 --public-packages '*' --compress brotli --out-path=dist/ build/serverfiles.js",
+    "compile:clean": "rm -rf build",
+    "build": "run-s clean transpile compile compile:clean",
+    "bab": "babel src -d babout"
   },
   "dependencies": {
     "chalk": "^2.4.1",
-    "express": "^4.17.1",
     "hypercore": "^8.3.0",
     "hyperswarm": "^2.14.0",
     "hypertrie": "^5.0.2",
     "librarycomposer": "^0.1.8",
-    "node-safeflow": "^0.8.0",
+    "node-safeflow": "^0.8.1",
+    "pkg": "^5.3.1",
     "pump": "^3.0.0",
-    "vue-native-websocket": "^2.0.14",
-    "websocket": "^1.0.31",
-    "ws": "^2.0.5"
+    "ws": "^8.2.1"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
-    "nw": "^0.18.2",
-    "nw-builder": "^3.1.2"
+    "esbuild": "^0.12.15"
+  },
+  "pkg": {
+    "output": "dist",
+    "targets": [
+      "node14-linux-arm64"
+    ]
   }
 }
