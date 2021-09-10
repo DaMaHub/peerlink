@@ -182,6 +182,7 @@ wsServer.on('connection', function ws(ws) {
       ws.send(JSON.stringify('talk to CALE'))
     } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'auth') {
+        console.log('auth start')
         let authStatus = await liveSafeFLOW.networkAuthorisation(o.network, o.settings)
         // if verified then load starting experiments into ECS-safeFLOW
         ws.send(JSON.stringify(authStatus))
