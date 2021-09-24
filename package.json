@@ -21,7 +21,7 @@
     "hyperswarm": "^2.14.0",
     "hypertrie": "^5.0.2",
     "librarycomposer": "^0.1.8",
-    "node-safeflow": "^0.8.2",
+    "node-safeflow": "^0.8.3",
     "pkg": "^5.3.1",
     "pump": "^3.0.0",
     "ws": "^8.2.1"
