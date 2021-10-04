@@ -1,6 +1,6 @@
 'use strict'
-// import { createServer } from 'https'
-import { createServer } from 'http'
+import { createServer } from 'https'
+// import { createServer } from 'http'
 import fs from 'fs'
 import { WebSocketServer } from 'ws'
 import LibComposer from 'librarycomposer'
@@ -16,19 +16,19 @@ const liveSafeFLOW = new SafeFLOW()
 let libraryData = {}
 
 // https options for crypto
-/*const options = {
+const options = {
   key: fs.readFileSync('src/key.pem'),
   cert: fs.readFileSync('src/cert.pem')
 }
-*/
-const server = createServer((request, response) => {
+
+// const server = createServer((request, response) => {
+  // process HTTP request. Since we're writing just WebSockets
+  // server we don't have to implement anything.
+// })
+const server = createServer(options, (request, response) => {
   // process HTTP request. Since we're writing just WebSockets
   // server we don't have to implement anything.
 })
-/* const server = https.createServer(options, (request, response) => {
-  // process HTTP request. Since we're writing just WebSockets
-  // server we don't have to implement anything.
-}) */
 
 server.on('error', function(e) {
   console.log('problem with request: ' + e.stack);
