@@ -22,7 +22,12 @@ Installation:
 npm install
 ```
 
+Generate Self Certified Certifcate for HTTPS
+--------------------------------------------
+https://letsencrypt.org/  how to setup
+place keys at  src/keys.pem   src/cert.pem
+
 ### Run
 ```
-node index.js
+npm run start
 ```
