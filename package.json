@@ -1,6 +1,6 @@
 {
   "name": "peerlink",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": false,
   "type": "module",
   "bin": "src/index.js",
@@ -21,10 +21,11 @@
     "hyperswarm": "^2.14.0",
     "hypertrie": "^5.0.2",
     "librarycomposer": "^0.1.8",
-    "node-safeflow": "^0.8.6",
+    "node-safeflow": "^0.8.8",
     "pkg": "^5.3.1",
     "pump": "^3.0.0",
-    "ws": "^8.2.1"
+    "ws": "^8.2.1",
+     "sqlite3": "^5.0.2"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
