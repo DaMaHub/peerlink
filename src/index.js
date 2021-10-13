@@ -183,7 +183,7 @@ wsServer.on('connection', function ws(ws) {
     } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'auth') {
         console.log('auth start')
-        let authStatus = await liveSafeFLOW.networkAuthorisation(o.network, o.settings)
+        let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
         // if verified then load starting experiments into ECS-safeFLOW
         ws.send(JSON.stringify(authStatus))
         // check the public network library
