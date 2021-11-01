@@ -187,9 +187,7 @@ wsServer.on('connection', function ws(ws) {
         let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
         // if verified then load starting experiments into ECS-safeFLOW
         ws.send(JSON.stringify(authStatus))
-        // check the public network library
-        peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
-        } else if (o.action === 'datastoreauth') {
+      } else if (o.action === 'datastoreauth') {
           console.log('auth datastore(s)')
           let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
           // if verified then load starting experiments into ECS-safeFLOW
@@ -240,7 +238,7 @@ wsServer.on('connection', function ws(ws) {
       } else if (o.reftype.trim() === 'peer-add') {
         peerStoreLive.addPeer(o.data, callbackPeerNetwork)
       } else if (o.reftype.trim() === 'warm-peers') {
-        peerStoreLive.listWarmPeers(callbackWarmPeers)
+        peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
       } else if (o.reftype.trim() === 'replicatekey') {
         // two peer syncing reference contracts
         const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)

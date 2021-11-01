@@ -20,7 +20,7 @@ import pump from 'pump'
 
 var PeerStoreWorker = function () {
   events.EventEmitter.call(this)
-  this.feed = {}
+  // this.feed = {}
   this.datastorePeerlibrary = {}
   this.datastoreNL = {}
   this.datastoreKBL = {}
@@ -40,9 +40,9 @@ util.inherits(PeerStoreWorker, events.EventEmitter)
 *
 */
 PeerStoreWorker.prototype.setupDatastores = function () {
-  this.feed = hypercore(os.homedir() + '/peerlink/peerlog', {
+  /* this.feed = hypercore(os.homedir() + '/peerlink/peerlog', {
     valueEncoding: 'json'
-  })
+  }) */
   // peer warm cold connections
   this.datastorePeers = hypertrie(os.homedir() + '/peerlink/peernetwork.db', {valueEncoding: 'json'})
   // peer library of joined experiments
@@ -93,8 +93,14 @@ PeerStoreWorker.prototype.keyManagement = function (callback) {
 * @method listWarmPeers
 *
 */
-PeerStoreWorker.prototype.listWarmPeers = function (callback) {
+PeerStoreWorker.prototype.listWarmPeers = function (callback, callbacklibrary) {
   this.datastorePeers.list( { ifAvailable: true }, (err, data) => {
+    // sync with the main peer in the warm list
+    // check the public network library and check for updates
+    console.log('warm list')
+    console.log(data[0])
+    let testKey = 'a373cba8dd96e8d64856925faf1ca85f9e755441ded7a866978c18320437c72e' // data[0.value.publickey]
+    this.replicatePublicLibrary(testKey, callbacklibrary)
     callback(data)
   })
 }
@@ -115,17 +121,17 @@ PeerStoreWorker.prototype.addPeer = function (newPeer, callback) {
 
 /**
 * return library public key and active swarm open
-* @method singlePublicKey
+* @method privatePeerLibrary
 *
 */
-PeerStoreWorker.prototype.singlePublicKey = function (pk, callback) {
+PeerStoreWorker.prototype.privatePeerLibrary = function (pk, callback) {
   const localthis = this
   let liveSwarm = hyperswarm()
   let pubkey = ''
   this.datastoreNL.ready(() => {
-    pubkey = this.datastoreNL.key.toString('hex')
+    pubkey = this.datastorePeerlibrary.key.toString('hex')
     // join swarm Network
-    liveSwarm.join(this.datastoreNL.key, {
+    liveSwarm.join(this.datastorePeerlibrary.key, {
       lookup: true, // find & connect to peers
       announce: true // optional- announce yourself as a connection target
     })
@@ -133,7 +139,7 @@ PeerStoreWorker.prototype.singlePublicKey = function (pk, callback) {
     liveSwarm.on('connection', function (socket, details) {
       // `details` is a simple object that describes the peer we connected to
       console.log('swarm connect peer1')
-      pump(socket, localthis.datastoreNL.replicate(true, { live: true }), socket)
+      pump(socket, localthis.datastorePeerlibrary.replicate(true, { live: true }), socket)
     })
     callback(pubkey)
   })
@@ -168,44 +174,42 @@ PeerStoreWorker.prototype.openLibrary = function (pk, callback) {
 }
 
 /**
-* replicate an explicit peer library ref contract datastore
-* @method peerRefContractReplicate
+* replicate the publick library ref contract datastore
+* @method replicatePublicLibrary
 *
 */
-PeerStoreWorker.prototype.peerRefContractReplicate = function (key, callback) {
+PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
   // replicate
+  console.log('public library setup checking updats')
   const localthis = this
   let liveSwarm = hyperswarm()
   var connectCount = 0
   let rpeer1Key = Buffer.from(key, "hex")
   // has the peers key and datastore been setup already?
-  if (this.datastoreNL2 === undefined && key !== 'peer') {
+  if (this.datastoreNL2 === undefined) {
     localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink/librarynetwork2.db', rpeer1Key, {valueEncoding: 'json'})
     liveSwarm.join(rpeer1Key, {
       lookup: true, // find & connect to peers
       announce: true // optional- announce yourself as a connection target
     })
     this.datastoreNL2.ready(() => {
-      console.log('ready to do replication?')
+      console.log('ready to do PL replication?')
       liveSwarm.on('connection', function (socket, details) {
         console.log('swarm connect peer')
         connectCount++
         console.log(connectCount)
-        pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
-        console.log('after replication')
-        localthis.datastoreNL2.list( { ifAvailable: true }, callback)
+        // pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
+        // console.log('after replication')
+        // localthis.datastoreNL2.list( { ifAvailable: true }, callback)
+        // keep checking for new updates to network library (need to filter when bigger network)
+        function updatePublicLibrary() {
+          console.log('check public library update')
+          pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
+          localthis.datastoreNL2.list( { ifAvailable: true }, callback)
+        }
+        setInterval(updatePublicLibrary, 2000)
       })
     })
-  } else if (key === 'peer') {
-    if (this.datastoreNL2 === undefined) {
-      localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink/librarynetwork2.db', {valueEncoding: 'json'})
-      localthis.datastoreNL2.list( { ifAvailable: true }, callback)
-    } else {
-      localthis.datastoreNL2.list( { ifAvailable: true }, callback)
-    }
-  } else {
-    console.log('peer shared datastore setup already')
-    localthis.datastoreNL2.list( { ifAvailable: true }, callback)
   }
 }
 
