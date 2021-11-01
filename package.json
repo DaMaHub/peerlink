@@ -1,6 +1,6 @@
 {
   "name": "peerlink",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "private": false,
   "type": "module",
   "bin": "src/index.js",
