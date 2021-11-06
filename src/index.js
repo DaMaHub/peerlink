@@ -9,10 +9,9 @@ import DatastoreWorker from './peerStore.js'
 import KBIDstoreWorker from './kbidStore.js'
 import os from 'os'
 
-const liveLibrary = new LibComposer()
-let peerStoreLive =  new DatastoreWorker() // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
-let kbidStoreLive // not in use
-const liveSafeFLOW = new SafeFLOW()
+let liveSafeFLOW = {}
+let liveLibrary = {}
+let peerStoreLive = {}
 let libraryData = {}
 
 // https options for crypto
@@ -36,43 +35,103 @@ server.on('error', function(e) {
 
 server.listen(9888, () => {
   console.log('listening on *:9888')
-  if (fs.existsSync(os.homedir() + '/peerlink')) {
-    // Do something
-    console.log('yes path existings')
-    // setup datastores
-    peerStoreLive.setupDatastores()
-  } else {
-    console.log('no path ')
-    fs.mkdir(os.homedir() + '/peerlink', function(err) {
-      if (err) {
-        console.log(err)
-      } else {
-        console.log("New directory successfully created.")
-        // setup datastores
-        peerStoreLive.setupDatastores()
-      }
-    })
-  }
 })
 
 const wsServer = new WebSocketServer({ server })
-
-/*
-wsServer.on('ws', function ws(ws) {
-  ws.on('message', function incoming(message) {
-    console.log('received: %s', message)
-    ws.send('thank you for the message')
-  })
-  let firstContact = {}
-  firstContact.data = 'peerconnectlive'
-  ws.send(JSON.stringify(firstContact))
-})
-*/
-// WebSocket server
-wsServer.on('connection', function ws(ws) {
-// wsServer.on('request', request => {
-  // let ws = request.accept(null, request.origin)
+  // WebSocket server
   console.log('peer connected')
+  wsServer.on('connection', function ws(ws) {
+  // valid cloud access token?
+  function setupAcount () {
+    liveLibrary = new LibComposer()
+    peerStoreLive =  new DatastoreWorker() // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
+    let kbidStoreLive // not in use
+    liveSafeFLOW = new SafeFLOW()
+    // let libraryData = {}
+    // setup folders
+    if (fs.existsSync(os.homedir() + '/peerlink')) {
+      // Do something
+      console.log('yes path existings')
+      // setup datastores
+      peerStoreLive.setupDatastores()
+    } else {
+      console.log('no path ')
+      fs.mkdir(os.homedir() + '/peerlink', function(err) {
+        if (err) {
+          console.log(err)
+        } else {
+          console.log("New directory successfully created.")
+          // setup datastores
+          peerStoreLive.setupDatastores()
+        }
+      })
+    }
+    // listenr for data back from ECS
+    liveSafeFLOW.on('displayEntity', (data) => {
+      data.type = 'newEntity'
+      ws.send(JSON.stringify(data))
+    })
+    liveSafeFLOW.on('displayEntityRange', (data) => {
+      data.type = 'newEntityRange'
+      ws.send(JSON.stringify(data))
+    })
+    liveSafeFLOW.on('displayUpdateEntity', (data) => {
+      data.type = 'updateEntity'
+      ws.send(JSON.stringify(data))
+    })
+    liveSafeFLOW.on('displayUpdateEntityRange', (data) => {
+      data.type = 'updateEntityRange'
+      ws.send(JSON.stringify(data))
+    })
+    liveSafeFLOW.on('displayEmpty', (data) => {
+      data.type = 'displayEmpty'
+      ws.send(JSON.stringify(data))
+    })
+    liveSafeFLOW.on('updateModule', (data) => {
+      let moduleRefContract = liveLibrary.liveComposer.moduleComposer(data, 'update')
+      const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
+    })
+    liveSafeFLOW.on('storePeerResults', (data) => {
+      const savedFeedback = peerStoreLive.peerStoreResults(data)
+    })
+    liveSafeFLOW.on('checkPeerResults', (data) => {
+      const matchResult = peerStoreLive.peerStoreCheckResults(data, resultsCallback)
+    })
+    liveSafeFLOW.on('kbledgerEntry', (data) => {
+      const savedFeedback = peerStoreLive.peerKBLentry(data)
+    })
+    // put back key info
+    function callbackKey (data) {
+      let pubkeyData = {}
+      pubkeyData.type = 'publickey'
+      pubkeyData.pubkey = data
+      ws.send(JSON.stringify(pubkeyData))
+    }
+    peerStoreLive.keyManagement(callbackKey)
+    function callbacklibrary (err, data) {
+      // pass to sort data into ref contract types
+      // console.log('call back public library')
+      // console.log(data)
+      libraryData.data = 'contracts'
+      libraryData.type = 'publiclibrary'
+      const segmentedRefContracts = liveLibrary.liveRefcontUtility.refcontractSperate(data)
+      libraryData.referenceContracts = segmentedRefContracts
+      // need to split for genesis and peer joined NXPs
+      const nxpSplit = liveLibrary.liveRefcontUtility.experimentSplit(segmentedRefContracts.experiment)
+      libraryData.splitExperiments = nxpSplit
+      // look up modules for this experiments
+      libraryData.networkExpModules = liveLibrary.liveRefcontUtility.expMatchModuleGenesis(libraryData.referenceContracts.module, nxpSplit.genesis)
+      libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
+      ws.send(JSON.stringify(libraryData))
+    }
+    function callbackWarmPeers (data) {
+      let peerNData = {}
+      peerNData.type = 'warm-peers'
+      peerNData.data = data
+      ws.send(JSON.stringify(peerNData))
+    }
+    peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
+  }
   // call back from results etc needing to get back to safeFLOW-ecs
   function resultsCallback (entity, err, data) {
     let resultMatch = {}
@@ -85,41 +144,6 @@ wsServer.on('connection', function ws(ws) {
     }
     liveSafeFLOW.resultsFlow(resultMatch)
   }
-
-  // listenr for data back from ECS
-  liveSafeFLOW.on('displayEntity', (data) => {
-    data.type = 'newEntity'
-    ws.send(JSON.stringify(data))
-  })
-  liveSafeFLOW.on('displayEntityRange', (data) => {
-    data.type = 'newEntityRange'
-    ws.send(JSON.stringify(data))
-  })
-  liveSafeFLOW.on('displayUpdateEntity', (data) => {
-    data.type = 'updateEntity'
-    ws.send(JSON.stringify(data))
-  })
-  liveSafeFLOW.on('displayUpdateEntityRange', (data) => {
-    data.type = 'updateEntityRange'
-    ws.send(JSON.stringify(data))
-  })
-  liveSafeFLOW.on('displayEmpty', (data) => {
-    data.type = 'displayEmpty'
-    ws.send(JSON.stringify(data))
-  })
-  liveSafeFLOW.on('updateModule', (data) => {
-    let moduleRefContract = liveLibrary.liveComposer.moduleComposer(data, 'update')
-    const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
-  })
-  liveSafeFLOW.on('storePeerResults', (data) => {
-    const savedFeedback = peerStoreLive.peerStoreResults(data)
-  })
-  liveSafeFLOW.on('checkPeerResults', (data) => {
-    const matchResult = peerStoreLive.peerStoreCheckResults(data, resultsCallback)
-  })
-  liveSafeFLOW.on('kbledgerEntry', (data) => {
-    const savedFeedback = peerStoreLive.peerKBLentry(data)
-  })
 
   ws.on('message', async msg => {
     function callbackKey (data) {
@@ -180,13 +204,29 @@ wsServer.on('connection', function ws(ws) {
     const o = JSON.parse(msg)
     if (o.reftype.trim() === 'hello') {
       ws.send(JSON.stringify('talk to CALE'))
+    } else if (o.reftype.trim() === 'cloud') {
+      // valid cloud token
+      console.log('cloud auth check')
+      let validToken = ''
+      if (validToken === true) {
+        setupAcount()
+      } else {
+        console.log('not a valid token')
+      }
     } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'auth') {
         // secure connect to safeFLOW
         console.log('auth start')
-        let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
-        // if verified then load starting experiments into ECS-safeFLOW
-        ws.send(JSON.stringify(authStatus))
+        console.log('cloud auth check')
+        let validToken = '123'
+        if (validToken === o.cloudtoken) {
+          setupAcount()
+          let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+          // if verified then load starting experiments into ECS-safeFLOW
+          ws.send(JSON.stringify(authStatus))
+        } else {
+          console.log('not a valid token')
+        }
       } else if (o.action === 'datastoreauth') {
           console.log('auth datastore(s)')
           let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
@@ -243,7 +283,8 @@ wsServer.on('connection', function ws(ws) {
         // two peer syncing reference contracts
         const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
       } else if (o.reftype.trim() === 'publiclibrary') {
-        // console.log('public library')
+        console.log('public library')
+        console.log(peerStoreLive)
         peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
       } else if (o.reftype.trim() === 'privatelibrary') {
         peerStoreLive.peerGETRefContracts('all', callbackPeer)
