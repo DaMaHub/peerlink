@@ -34,7 +34,7 @@ server.on('error', function(e) {
 })
 
 server.listen(9888, () => {
-  console.log('listening on *:9888')
+  console.log('listening on 9888')
 })
 
 const wsServer = new WebSocketServer({ server })
@@ -229,9 +229,9 @@ const wsServer = new WebSocketServer({ server })
         }
       } else if (o.action === 'datastoreauth') {
           console.log('auth datastore(s)')
-          let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
+          // let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
           // if verified then load starting experiments into ECS-safeFLOW
-          ws.send(JSON.stringify(datastoreStatus))
+          // ws.send(JSON.stringify(datastoreStatus))
           // check the public network library
           // peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
       } else if (o.action === 'disconnect') {
@@ -284,7 +284,6 @@ const wsServer = new WebSocketServer({ server })
         const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
       } else if (o.reftype.trim() === 'publiclibrary') {
         console.log('public library')
-        console.log(peerStoreLive)
         peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
       } else if (o.reftype.trim() === 'privatelibrary') {
         peerStoreLive.peerGETRefContracts('all', callbackPeer)
