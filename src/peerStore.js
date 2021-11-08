@@ -21,8 +21,10 @@ import pump from 'pump'
 var PeerStoreWorker = function () {
   events.EventEmitter.call(this)
   // this.feed = {}
+  this.datastorePeers = {}
   this.datastorePeerlibrary = {}
   this.datastoreNL = {}
+  this.datastoreResults = {}
   this.datastoreKBL = {}
   this.dataswarm = hyperswarm()
   this.listdata = []

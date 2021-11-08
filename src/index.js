@@ -209,23 +209,47 @@ const wsServer = new WebSocketServer({ server })
       console.log('cloud auth check')
       let validToken = ''
       if (validToken === true) {
-        setupAcount()
+        let setupBefore = Object.keys(this.peerStoreLive.datastorePeers)
+        console.log('existing status of datastaore')
+        console.log(setupBefore)
+        if (setupBefore.length === 0) {
+          setupAcount()
+        } else {
+          console.log('datastore already setup')
+        }
       } else {
         console.log('not a valid token')
       }
     } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'auth') {
         // secure connect to safeFLOW
-        console.log('auth start')
-        console.log('cloud auth check')
+        console.log('safeFLOW auth start')
         let validToken = '123'
         if (validToken === o.cloudtoken) {
-          setupAcount()
-          let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
-          // if verified then load starting experiments into ECS-safeFLOW
-          ws.send(JSON.stringify(authStatus))
+          let setupBefore = []
+          if (peerStoreLive !== undefined) {
+            if (peerStoreLive.datastorePeers !== undefined) {
+              setupBefore = Object.keys(peerStoreLive.datastorePeers)
+            } else {
+            }
+          } else {
+          }
+          if (setupBefore.length === 0) {
+            setupAcount()
+            let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+            // if verified then load starting experiments into ECS-safeFLOW
+            ws.send(JSON.stringify(authStatus))
+          } else {
+            let setupStatus = {}
+            setupStatus.type = 'authconfirm'
+            setupStatus.data = true
+            ws.send(JSON.stringify(setupStatus))
+          }
         } else {
-          console.log('not a valid token')
+          let tokenMessage = {}
+          tokenMessage.type = 'cloudtoken'
+          tokenMessage.data = false
+          ws.send(JSON.stringify(tokenMessage))
         }
       } else if (o.action === 'datastoreauth') {
           console.log('auth datastore(s)')
@@ -235,7 +259,8 @@ const wsServer = new WebSocketServer({ server })
           // check the public network library
           // peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
       } else if (o.action === 'disconnect') {
-        process.exit(0)
+        console.log('session socket ended')
+        // process.exit(0)
       } else if (o.action === 'networkexperiment') {
         // start gather data, perform compute, formatting etc.
         async function expCallback (err, data) {
@@ -488,7 +513,7 @@ const wsServer = new WebSocketServer({ server })
   })
   ws.on('close', ws => {
     console.log('close ws')
-    process.exit(0)
+    // process.exit(0)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')
