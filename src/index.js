@@ -146,12 +146,12 @@ const wsServer = new WebSocketServer({ server })
   }
 
   ws.on('message', async msg => {
-    function callbackKey (data) {
+    /* function callbackKey (data) {
       let pubkeyData = {}
       pubkeyData.type = 'publickey'
       pubkeyData.pubkey = data
       ws.send(JSON.stringify(pubkeyData))
-    }
+    } */
     function callbackOpenLibrary (data) {
       let pubkeyData = {}
       pubkeyData.type = 'open-library'
@@ -164,12 +164,12 @@ const wsServer = new WebSocketServer({ server })
       peerNData.data = data
       ws.send(JSON.stringify(peerNData))
     }
-    function callbackWarmPeers (data) {
+    /* function callbackWarmPeers (data) {
       let peerNData = {}
       peerNData.type = 'warm-peers'
       peerNData.data = data
       ws.send(JSON.stringify(peerNData))
-    }
+    } */
     function callbacklibrary (err, data) {
       // pass to sort data into ref contract types
       // console.log('call back public library')
@@ -253,9 +253,9 @@ const wsServer = new WebSocketServer({ server })
         }
       } else if (o.action === 'datastoreauth') {
           console.log('auth datastore(s)')
-          // let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
+          let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
           // if verified then load starting experiments into ECS-safeFLOW
-          // ws.send(JSON.stringify(datastoreStatus))
+          ws.send(JSON.stringify(datastoreStatus))
           // check the public network library
           // peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
       } else if (o.action === 'disconnect') {

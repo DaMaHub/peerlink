@@ -99,10 +99,8 @@ PeerStoreWorker.prototype.listWarmPeers = function (callback, callbacklibrary) {
   this.datastorePeers.list( { ifAvailable: true }, (err, data) => {
     // sync with the main peer in the warm list
     // check the public network library and check for updates
-    console.log('warm list')
-    console.log(data[0])
     let testKey = 'a373cba8dd96e8d64856925faf1ca85f9e755441ded7a866978c18320437c72e' // data[0.value.publickey]
-    this.replicatePublicLibrary(testKey, callbacklibrary)
+    // this.replicatePublicLibrary(testKey, callbacklibrary)
     callback(data)
   })
 }
