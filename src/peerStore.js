@@ -58,6 +58,35 @@ PeerStoreWorker.prototype.setupDatastores = function () {
 }
 
 /**
+* close the ptop Datastores
+* @method closeDataStores
+*
+*/
+PeerStoreWorker.prototype.closeDatastores = function () {
+  console.log('close data stores')
+  // peer warm cold connections
+  this.datastorePeers.on('close', function () {
+    console.log('close emitted')
+  })
+  // peer library of joined experiments
+  this.datastorePeerlibrary.on('close', function () {
+    console.log('close emitted')
+  })
+  // network library public
+  this.datastoreNL.on('close', function () {
+    console.log('close emitted')
+  })
+  // results ledger
+  this.datastoreResults.on('close', function () {
+    console.log('close emitted')
+  })
+  // knowledge bundle ledger
+  this.datastoreKBL.on('close', function () {
+    console.log('close emitted')
+  })
+}
+
+/**
 * return public keys for key managment
 * @method keyManagement
 *
