@@ -28,6 +28,9 @@ const options = {
 const server = createServer(options, (request, response) => {
   // process HTTP request. Since we're writing just WebSockets
   // server we don't have to implement anything.
+  response.writeHead(200, {'Content-Type': 'text/html'})
+  let file = fs.createReadStream('src/index.html')
+  file.pipe(response)
 })
 
 server.on('error', function(e) {
@@ -302,22 +305,6 @@ const wsServer = new WebSocketServer({ server })
     const o = JSON.parse(msg)
     if (o.reftype.trim() === 'hello') {
       ws.send(JSON.stringify('talk to CALE'))
-    } else if (o.reftype.trim() === 'cloud') {
-      // valid cloud token
-      console.log('cloud auth check')
-      let validToken = ''
-      if (validToken === true) {
-        let setupBefore = Object.keys(this.peerStoreLive.datastorePeers)
-        console.log('existing status of datastaore')
-        console.log(setupBefore)
-        if (setupBefore.length === 0) {
-          setupAcount()
-        } else {
-          console.log('datastore already setup')
-        }
-      } else {
-        console.log('not a valid token')
-      }
     } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'auth') {
         // secure connect to safeFLOW
@@ -628,6 +615,7 @@ const wsServer = new WebSocketServer({ server })
   })
   ws.on('close', ws => {
     console.log('close ws')
+    authLive = false
     // process.exit(0)
   })
   ws.on('error', ws => {
