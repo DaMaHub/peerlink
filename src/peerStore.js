@@ -45,6 +45,8 @@ PeerStoreWorker.prototype.setupDatastores = function () {
   }) */
   // peer warm cold connections
   this.datastorePeers = hypertrie(os.homedir() + '/peerlink/peernetwork.db', {valueEncoding: 'json'})
+  // peer warm cold connections
+  this.datastoreLifeboards = hypertrie(os.homedir() + '/peerlink/peerlifeboards.db', {valueEncoding: 'json'})
   // peer library of joined experiments
   this.datastorePeerlibrary = hypertrie(os.homedir() + '/peerlink/peerlibrary.db', {valueEncoding: 'json'})
   // network library public
@@ -85,6 +87,42 @@ PeerStoreWorker.prototype.keyManagement = function (callback) {
   this.datastoreKBL.ready(() => {
     pubkeys5.kblpeer = this.datastoreKBL.key.toString('hex')
     callback(pubkeys5)
+  })
+  let pubkeys6 = {}
+  this.datastoreLifeboards.ready(() => {
+    pubkeys6.lifeboards = this.datastoreKBL.key.toString('hex')
+    callback(pubkeys6)
+  })
+}
+
+/**
+* return list lifeboards
+* @method listLifeboards
+*
+*/
+PeerStoreWorker.prototype.listLifeboards = function (callback, callbacklibrary) {
+  this.datastoreLifeboards.list( { ifAvailable: true }, (err, data) => {
+    // sync with the main peer in the warm list
+    // check the public network library and check for updates
+    console.log('lifeboard list')
+    console.log(data[0])
+    // let testKey = 'a373cba8dd96e8d64856925faf1ca85f9e755441ded7a866978c18320437c72e' // data[0.value.publickey]
+    // this.replicatePublicLibrary(testKey, callbacklibrary)
+    callback(data)
+  })
+}
+
+/**
+* return confirmation of new Lifeboard saved
+* @method addLifeboard
+*
+*/
+PeerStoreWorker.prototype.addLifeboard = function (newLifeboard, callback) {
+  let localthis = this
+  this.datastoreLifeboards.put(newLifeboard.publickey, newLifeboard, function () {
+    localthis.datastorePeers.get(newLifeboard.publickey, (err, data) => {
+        callback(data)
+      })
   })
 }
 
