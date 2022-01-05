@@ -3,12 +3,14 @@ import { createServer } from 'https'
 // import { createServer } from 'http'
 import fs from 'fs'
 import { WebSocketServer } from 'ws'
+import CaleAi from 'cale-holism'
 import LibComposer from 'librarycomposer'
 import SafeFLOW from 'node-safeflow'
 import DatastoreWorker from './peerStore.js'
 import KBIDstoreWorker from './kbidStore.js'
 import os from 'os'
 
+const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
 let peerStoreLive =  new DatastoreWorker() // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
 let kbidStoreLive // not in use
@@ -36,23 +38,6 @@ server.on('error', function(e) {
 
 server.listen(9888, () => {
   console.log('listening on *:9888')
-  if (fs.existsSync(os.homedir() + '/peerlink')) {
-    // Do something
-    console.log('yes path existings')
-    // setup datastores
-    peerStoreLive.setupDatastores()
-  } else {
-    console.log('no path ')
-    fs.mkdir(os.homedir() + '/peerlink', function(err) {
-      if (err) {
-        console.log(err)
-      } else {
-        console.log("New directory successfully created.")
-        // setup datastores
-        peerStoreLive.setupDatastores()
-      }
-    })
-  }
 })
 
 const wsServer = new WebSocketServer({ server })
@@ -72,7 +57,7 @@ wsServer.on('ws', function ws(ws) {
 wsServer.on('connection', function ws(ws) {
 // wsServer.on('request', request => {
   // let ws = request.accept(null, request.origin)
-  console.log('peer connected')
+  console.log('peer connected websocket')
   // call back from results etc needing to get back to safeFLOW-ecs
   function resultsCallback (entity, err, data) {
     let resultMatch = {}
@@ -148,8 +133,6 @@ wsServer.on('connection', function ws(ws) {
     }
     function callbacklibrary (err, data) {
       // pass to sort data into ref contract types
-      // console.log('call back public library')
-      // console.log(data)
       libraryData.data = 'contracts'
       libraryData.type = 'publiclibrary'
       const segmentedRefContracts = liveLibrary.liveRefcontUtility.refcontractSperate(data)
@@ -178,17 +161,25 @@ wsServer.on('connection', function ws(ws) {
     }
     // logic for incoming request flows
     const o = JSON.parse(msg)
-    if (o.reftype.trim() === 'hello') {
-      ws.send(JSON.stringify('talk to CALE'))
+    if (o.reftype.trim() === 'caleai') {
+      if (o.action === 'question') {
+        // send to CALE NLP path
+        let replyData = liveCALEAI.nlpflow(o.data)
+        let caleReply = {}
+        caleReply.type = 'cale-reply'
+        caleReply.data = {}
+        ws.send(JSON.stringify(replyData))
+      }
     } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'auth') {
         // secure connect to safeFLOW
         console.log('auth start')
         let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
-        // if verified then load starting experiments into ECS-safeFLOW
+        // OK with safeFLOW setup then bring peerDatastores to life
+        peerStoreLive.setupDatastores()
         ws.send(JSON.stringify(authStatus))
-      } else if (o.action === 'datastoreauth') {
-          console.log('auth datastore(s)')
+      } else if (o.action === 'dataAPIauth') {
+          console.log('auth APIS third party datastore(s)')
           let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
           // if verified then load starting experiments into ECS-safeFLOW
           ws.send(JSON.stringify(datastoreStatus))

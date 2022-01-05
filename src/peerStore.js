@@ -40,6 +40,31 @@ util.inherits(PeerStoreWorker, events.EventEmitter)
 *
 */
 PeerStoreWorker.prototype.setupDatastores = function () {
+  if (fs.existsSync(os.homedir() + '/peerlink')) {
+    // Do something
+    console.log('yes path existings')
+    // setup datastores
+    this.activateDatastores()
+  } else {
+    console.log('no path ')
+    fs.mkdir(os.homedir() + '/peerlink', function(err) {
+      if (err) {
+        console.log(err)
+      } else {
+        console.log("New directory successfully created.")
+        // setup datastores
+        this.activateDatastores()
+      }
+    })
+  }
+}
+
+/**
+* make live datastores
+* @method activateDatastores
+*
+*/
+PeerStoreWorker.prototype.activateDatastores = function () {
   /* this.feed = hypercore(os.homedir() + '/peerlink/peerlog', {
     valueEncoding: 'json'
   }) */
@@ -55,6 +80,7 @@ PeerStoreWorker.prototype.setupDatastores = function () {
   this.datastoreResults = hypertrie(os.homedir() + '/peerlink/resultspeer.db', {valueEncoding: 'json'})
   // knowledge bundle ledger
   this.datastoreKBL = hypertrie(os.homedir() + '/peerlink/kblpeer.db', {valueEncoding: 'json'})
+  console.log('datastore huypere lile lives')
 }
 
 /**
@@ -90,7 +116,7 @@ PeerStoreWorker.prototype.keyManagement = function (callback) {
   })
   let pubkeys6 = {}
   this.datastoreLifeboards.ready(() => {
-    pubkeys6.lifeboards = this.datastoreKBL.key.toString('hex')
+    pubkeys6.lifeboards = this.datastoreLifeboards.key.toString('hex')
     callback(pubkeys6)
   })
 }
