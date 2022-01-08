@@ -161,7 +161,9 @@ wsServer.on('connection', function ws(ws) {
     }
     // logic for incoming request flows
     const o = JSON.parse(msg)
-    if (o.reftype.trim() === 'caleai') {
+    console.log('input')
+    console.log(o)
+    if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
       if (o.action === 'question') {
         // send to CALE NLP path
         let replyData = liveCALEAI.nlpflow(o.data)
