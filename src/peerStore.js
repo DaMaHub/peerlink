@@ -298,7 +298,18 @@ PeerStoreWorker.prototype.libraryGETRefContracts = function (getType, callback) 
 }
 
 /**
-* filter by Peer datatypes
+* peers lifeboard start settings
+* @method peerGETLifeboards
+*
+*/
+PeerStoreWorker.prototype.peerGETLifeboards = function (getType, callback) {
+  // read
+  let databack = this.datastoreLifeboards.list( { ifAvailable: true }, callback)
+  return true
+}
+
+/**
+* get Peer network library
 * @method peerKBLstart
 *
 */

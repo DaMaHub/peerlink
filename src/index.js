@@ -145,6 +145,20 @@ wsServer.on('connection', function ws(ws) {
       libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
       ws.send(JSON.stringify(libraryData))
     }
+    function callbackLifeboard (err, data) {
+      // pass to sort data into ref contract types
+      libraryData.data = 'contracts'
+      libraryData.type = 'peerlifeboard'
+      const segmentedRefContracts = liveLibrary.liveRefcontUtility.refcontractSperate(data)
+      libraryData.referenceContracts = segmentedRefContracts
+      // need to split for genesis and peer joined NXPs
+      const nxpSplit = liveLibrary.liveRefcontUtility.experimentSplit(segmentedRefContracts.experiment)
+      libraryData.splitExperiments = nxpSplit
+      // look up modules for this experiments
+      libraryData.networkExpModules = liveLibrary.liveRefcontUtility.expMatchModuleGenesis(libraryData.referenceContracts.module, nxpSplit.genesis)
+      libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
+      ws.send(JSON.stringify(libraryData))
+    }
     function callbackPeer (err, data) {
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
@@ -171,6 +185,13 @@ wsServer.on('connection', function ws(ws) {
         caleReply.type = 'cale-reply'
         caleReply.data = {}
         ws.send(JSON.stringify(replyData))
+      } else if (o.action === 'future') {
+        // send to routine for prediction or to chat interface to say CALE cannot help right now
+        /* let futureData = liveCALEAI.routineFuture()
+        let caleFuture = {}
+        caleFuture.type = 'cale-future'
+        caleFuture.data = {}
+        ws.send(JSON.stringify(futureData)) */
       }
     } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'auth') {
@@ -434,6 +455,14 @@ wsServer.on('connection', function ws(ws) {
         let moduleRefContract = liveLibrary.liveComposer.moduleComposer(o.data, 'join')
         const savedFeedback = peerStoreLive.libraryStoreRefContract(moduleRefContract)
         ws.send(JSON.stringify(savedFeedback))
+      } else if (o.reftype.trim() === 'newlifeboard') {
+        console.log('new lifeboard ref cont to create')
+      } else if (o.reftype.trim() === 'addlifeboard') {
+        console.log('add link to master lifebarod ref contract')
+      } else if (o.reftype.trim() === 'peerLifeboard') {
+        peerStoreLive.peerGETLifeboards('all', callbackLifeboard)
+      } else {
+        console.log('network library no match')
       }
     } else {
       console.log('nothing matched tell of that')
