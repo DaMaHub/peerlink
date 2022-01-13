@@ -147,16 +147,10 @@ wsServer.on('connection', function ws(ws) {
     }
     function callbackLifeboard (err, data) {
       // pass to sort data into ref contract types
+      let libraryData = {}
       libraryData.data = 'contracts'
       libraryData.type = 'peerlifeboard'
-      const segmentedRefContracts = liveLibrary.liveRefcontUtility.refcontractSperate(data)
-      libraryData.referenceContracts = segmentedRefContracts
-      // need to split for genesis and peer joined NXPs
-      const nxpSplit = liveLibrary.liveRefcontUtility.experimentSplit(segmentedRefContracts.experiment)
-      libraryData.splitExperiments = nxpSplit
-      // look up modules for this experiments
-      libraryData.networkExpModules = liveLibrary.liveRefcontUtility.expMatchModuleGenesis(libraryData.referenceContracts.module, nxpSplit.genesis)
-      libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
+      libraryData.lifeboard = data
       ws.send(JSON.stringify(libraryData))
     }
     function callbackPeer (err, data) {
@@ -457,6 +451,9 @@ wsServer.on('connection', function ws(ws) {
         ws.send(JSON.stringify(savedFeedback))
       } else if (o.reftype.trim() === 'newlifeboard') {
         console.log('new lifeboard ref cont to create')
+        let lifeboardRefContract = liveLibrary.liveComposer.lifeboardComposer(o.data, 'new')
+        const saveLB = peerStoreLive.lifeboardStoreRefContract(lifeboardRefContract)
+        ws.send(JSON.stringify(saveLB))
       } else if (o.reftype.trim() === 'addlifeboard') {
         console.log('add link to master lifebarod ref contract')
       } else if (o.reftype.trim() === 'peerLifeboard') {

@@ -320,6 +320,17 @@ PeerStoreWorker.prototype.peerGETRefContracts = function (getType, callback) {
 }
 
 /**
+* lookup specific lifebaord reference contract
+* @method getLifeboardContract
+*
+*/
+PeerStoreWorker.prototype.getLifeboardContract = function (getType, refcont, callback) {
+  // read
+  let databack = this.datastoreLifeboards.list( { ifAvailable: true }, callback)
+  return true
+}
+
+/**
 * lookup specific reference contract
 * @method getRefContract
 *
@@ -341,6 +352,27 @@ PeerStoreWorker.prototype.peerStoreCheckResults = function (dataPrint, callback)
   })
   // this.datastoreResults.list( { ifAvailable: true }, callback)
   return true
+}
+
+/**
+* save new Reference Contract Lifeboard
+* @method lifeboardStoreRefContract
+*
+*/
+PeerStoreWorker.prototype.lifeboardStoreRefContract = function (refContract) {
+  // save
+  const localthis = this
+  this.datastoreLifeboards.put(refContract.hash, refContract.contract, function () {
+    console.log('saved hypertrie OK-- lifeboard')
+    // localthis.datastoreLifeboards.get(refContract.hash, console.log)
+  })
+  // this should be done via callback TODO
+  let returnMessage = {}
+  returnMessage.stored = true
+  returnMessage.type = refContract.reftype
+  returnMessage.key = refContract.hash
+  returnMessage.contract = refContract.contract
+  return returnMessage
 }
 
 /**
