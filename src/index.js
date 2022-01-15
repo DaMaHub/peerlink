@@ -456,6 +456,9 @@ wsServer.on('connection', function ws(ws) {
         ws.send(JSON.stringify(saveLB))
       } else if (o.reftype.trim() === 'addlifeboard') {
         console.log('add link to master lifebarod ref contract')
+        let lifeboardMember = liveLibrary.liveComposer.lifeboardComposer(o.data, 'member')
+        const saveLBmember = peerStoreLive.lifeboardStoreRefContract(lifeboardMember)
+        ws.send(JSON.stringify(saveLBmember))
       } else if (o.reftype.trim() === 'peerLifeboard') {
         peerStoreLive.peerGETLifeboards('all', callbackLifeboard)
       } else {
