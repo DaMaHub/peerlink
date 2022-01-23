@@ -9,6 +9,8 @@ import SafeFLOW from 'node-safeflow'
 import DatastoreWorker from './peerStore.js'
 import KBIDstoreWorker from './kbidStore.js'
 import os from 'os'
+import csv from 'csv-parser'
+import csvHeaders from 'csv-headers'
 
 const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
@@ -205,25 +207,7 @@ wsServer.on('connection', function ws(ws) {
       } else if (o.action === 'disconnect') {
         process.exit(0)
       } else if (o.action === 'networkexperiment') {
-        // start gather data, perform compute, formatting etc.
-        async function expCallback (err, data) {
-          console.log(err)
-          // console.log('network experiment DATA')
-          // console.log(data)
-          let matchContract = {}
-          for (let ditem of data) {
-            if (ditem === '1234' ) {
-              matchContract = ditem
-            }
-          }
-          // console.log(matchContract)
-          let ecsData = await liveSafeFLOW.startFlow(matchContract)
-          let summaryECS = {}
-          summaryECS.type = 'ecssummary'
-          summaryECS.data = ecsData
-          ws.send(JSON.stringify(summaryECS))
-        }
-        // const experimentRefContract = peerStoreLive.getRefContract('experiment', o.data, expCallback)
+        // send summary info that HOP has received NXP bundle
         let ecsData = await liveSafeFLOW.startFlow(o.data)
         let summaryECS = {}
         summaryECS.type = 'ecssummary'
@@ -235,7 +219,112 @@ wsServer.on('connection', function ws(ws) {
       }
     } else if (o.type.trim() === 'library' ) {
       // library routing
-      if (o.reftype.trim() === 'viewpublickey') {
+      if (o.reftype.trim() === 'convert-csv-json') {
+        // save protocol original file save and JSON for HOP
+        // then prepare file for HOP i.e. convert to json
+        // file input management
+        console.log('line info')
+        console.log(o.data.info)
+        const headerSet = ['agency_cd', 'site_no', 'datetime', 'tz_cd', '16643_00065', '16643_00065_cd']
+        // extract out the headers name for columns
+        let match = ''
+        let lcounter = 0
+        const allFileContents = fs.readFileSync(o.data.path, 'utf-8')
+        allFileContents.split(/\r?\n/).forEach(line =>  {
+          lcounter++
+          if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
+            console.log('line number match')
+            console.log(`Line from file: ${line}`)
+            console.log(lcounter)
+            console.log(o.data.info.cnumber)
+            match = line
+          }
+        })
+        console.log('header?')
+        console.log(match)
+        console.log(o.data.info.delimiter)
+        let delimiter = ''
+        if (o.data.info.delimiter === 'tab') {
+          delimiter = "\t"
+        } else {
+          delimiter = ","
+        }
+        console.log(delimiter)
+        let splitWords = match.split(delimiter)
+        console.log(splitWords)
+        /* const reader = new FileReader()
+        reader.onloadend = function () {
+          // const fileData = reader.result
+          const lines = reader.result.split(/\r\n|\n/)
+          let lcounter = 0
+          for (let li of lines) {
+            lcounter++
+            if (lcounter === o.data.info.cnumber) {
+              console.log('line number match')
+              console.log(li)
+            }
+          }
+        } */
+        // reader.readAsText(o.data.path)
+
+        function readStream () {
+          return new Promise((resolve, reject) => {
+            const results = []
+            fs.createReadStream(o.data.path)
+              .pipe(csv({ headers: headerSet, separator: '\t', skipLines: 29 }))
+              .on('data', (data) => results.push(data))
+              .on('end', () => {
+                resolve(results)
+              })
+          })
+        }
+
+        function jsonConvert (results) {
+          console.log('segment out by category')
+          const flowList = []
+          for (const rs of results) {
+            // console.log(rs)
+            const dateFormat = new Date(rs.datetime)
+            const msDate = dateFormat.getTime()
+            const reformat = {}
+            reformat.Timestamp = msDate / 1000
+            reformat.timezone = rs.tz_cd
+            reformat.location = rs.site_no
+            reformat.owner = rs.agency_cd
+            reformat.waterlevel = rs['16643_00065']
+            reformat.state = rs['16643_00065_cd']
+            flowList.push(reformat)
+          }
+          console.log('parse out JSON')
+          const jsonFlow = JSON.stringify(flowList)
+          // console.log(jsonFlow)
+          fs.writeFile(os.homedir() + '/peerlink/json/' + o.data.name + '.json', jsonFlow, 'utf8', function (err) {
+            if (err) {
+              console.log('An error occured while writing JSON Object to File.')
+              return console.log(err)
+            }
+            console.log('JSON file has been saved.')
+            let storeFeedback = {}
+            storeFeedback.type = 'file-save'
+            storeFeedback.action = 'library'
+            storeFeedback.data = true
+            ws.send(JSON.stringify(storeFeedback))
+          })
+        }
+        // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
+        fs.rename(o.data.path, os.homedir() + '/peerlink/csv/' + o.data.name, function (err) {
+          if (err) throw err;
+          console.log('File Renamed.');
+        });
+        //  csv to JSON convertion and save into HOP
+        const praser = readStream()
+        praser.then(console.log('finshed'))
+        praser.then(
+          // console.log(result)
+          result => jsonConvert(result), // shows "done!" after 1 second
+          error => console.log(error) // doesn't run
+        )
+      } else if (o.reftype.trim() === 'viewpublickey') {
         // two peer syncing reference contracts
         const pubkey = peerStoreLive.singlePublicKey('', callbackKey)
       } else if (o.reftype.trim() === 'openlibrary') {
@@ -470,7 +559,7 @@ wsServer.on('connection', function ws(ws) {
   })
   ws.on('close', ws => {
     console.log('close ws')
-    process.exit(0)
+    // process.exit(0)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')

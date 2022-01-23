@@ -18,6 +18,7 @@
   "dependencies": {
     "cale-holism": "^0.0.2",
     "chalk": "^2.4.1",
+    "csv-parser": "^3.0.0",
     "hypercore": "^8.3.0",
     "hyperswarm": "^2.14.0",
     "hypertrie": "^5.0.2",

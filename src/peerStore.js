@@ -271,7 +271,7 @@ PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
           pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
           localthis.datastoreNL2.list( { ifAvailable: true }, callback)
         }
-        setInterval(updatePublicLibrary, 2000)
+        // setInterval(updatePublicLibrary, 2000)
       })
     })
   }
