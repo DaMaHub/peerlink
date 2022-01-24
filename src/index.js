@@ -225,7 +225,6 @@ wsServer.on('connection', function ws(ws) {
         // file input management
         console.log('line info')
         console.log(o.data.info)
-        const headerSet = ['agency_cd', 'site_no', 'datetime', 'tz_cd', '16643_00065', '16643_00065_cd']
         // extract out the headers name for columns
         let match = ''
         let lcounter = 0
@@ -233,25 +232,17 @@ wsServer.on('connection', function ws(ws) {
         allFileContents.split(/\r?\n/).forEach(line =>  {
           lcounter++
           if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
-            console.log('line number match')
-            console.log(`Line from file: ${line}`)
-            console.log(lcounter)
-            console.log(o.data.info.cnumber)
             match = line
           }
         })
-        console.log('header?')
-        console.log(match)
-        console.log(o.data.info.delimiter)
         let delimiter = ''
         if (o.data.info.delimiter === 'tab') {
           delimiter = "\t"
         } else {
           delimiter = ","
         }
-        console.log(delimiter)
         let splitWords = match.split(delimiter)
-        console.log(splitWords)
+        const headerSet = splitWords // ['agency_cd', 'site_no', 'datetime', 'tz_cd', '16643_00065', '16643_00065_cd']
         /* const reader = new FileReader()
         reader.onloadend = function () {
           // const fileData = reader.result
@@ -267,11 +258,11 @@ wsServer.on('connection', function ws(ws) {
         } */
         // reader.readAsText(o.data.path)
 
-        function readStream () {
+        function readStream (fpath, headerSet, delimiter, startno) {
           return new Promise((resolve, reject) => {
             const results = []
-            fs.createReadStream(o.data.path)
-              .pipe(csv({ headers: headerSet, separator: '\t', skipLines: 29 }))
+            fs.createReadStream(fpath)
+              .pipe(csv({ headers: headerSet, separator: delimiter, skipLines: startno }))
               .on('data', (data) => results.push(data))
               .on('end', () => {
                 resolve(results)
@@ -286,14 +277,8 @@ wsServer.on('connection', function ws(ws) {
             // console.log(rs)
             const dateFormat = new Date(rs.datetime)
             const msDate = dateFormat.getTime()
-            const reformat = {}
-            reformat.Timestamp = msDate / 1000
-            reformat.timezone = rs.tz_cd
-            reformat.location = rs.site_no
-            reformat.owner = rs.agency_cd
-            reformat.waterlevel = rs['16643_00065']
-            reformat.state = rs['16643_00065_cd']
-            flowList.push(reformat)
+            rs.datetime = msDate / 1000
+            flowList.push(rs)
           }
           console.log('parse out JSON')
           const jsonFlow = JSON.stringify(flowList)
@@ -304,20 +289,27 @@ wsServer.on('connection', function ws(ws) {
               return console.log(err)
             }
             console.log('JSON file has been saved.')
+            // data back to peer
+            let fileFeedback = {}
+            fileFeedback.success = true
+            fileFeedback.path = '/peerlink/json/' + o.data.name + '.json'
+            fileFeedback.columns = headerSet
             let storeFeedback = {}
             storeFeedback.type = 'file-save'
             storeFeedback.action = 'library'
-            storeFeedback.data = true
+            storeFeedback.data = fileFeedback
             ws.send(JSON.stringify(storeFeedback))
           })
         }
         // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
-        fs.rename(o.data.path, os.homedir() + '/peerlink/csv/' + o.data.name, function (err) {
+        let newPathcsv = os.homedir() + '/peerlink/csv/' + o.data.name
+        fs.rename(o.data.path, newPathcsv, function (err) {
           if (err) throw err;
           console.log('File Renamed.');
         });
         //  csv to JSON convertion and save into HOP
-        const praser = readStream()
+        let dataline = parseInt(o.data.info.dataline)
+        const praser = readStream(newPathcsv, headerSet, delimiter, dataline)
         praser.then(console.log('finshed'))
         praser.then(
           // console.log(result)
