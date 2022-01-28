@@ -42,11 +42,9 @@ util.inherits(PeerStoreWorker, events.EventEmitter)
 PeerStoreWorker.prototype.setupDatastores = function () {
   if (fs.existsSync(os.homedir() + '/peerlink')) {
     // Do something
-    console.log('yes path existings')
     // setup datastores
     this.activateDatastores()
   } else {
-    console.log('no path ')
     fs.mkdir(os.homedir() + '/peerlink', function(err) {
       if (err) {
         console.log(err)
@@ -80,7 +78,6 @@ PeerStoreWorker.prototype.activateDatastores = function () {
   this.datastoreResults = hypertrie(os.homedir() + '/peerlink/resultspeer.db', {valueEncoding: 'json'})
   // knowledge bundle ledger
   this.datastoreKBL = hypertrie(os.homedir() + '/peerlink/kblpeer.db', {valueEncoding: 'json'})
-  console.log('datastore huypere lile lives')
 }
 
 /**
@@ -130,8 +127,6 @@ PeerStoreWorker.prototype.listLifeboards = function (callback, callbacklibrary) 
   this.datastoreLifeboards.list( { ifAvailable: true }, (err, data) => {
     // sync with the main peer in the warm list
     // check the public network library and check for updates
-    console.log('lifeboard list')
-    console.log(data[0])
     // let testKey = 'a373cba8dd96e8d64856925faf1ca85f9e755441ded7a866978c18320437c72e' // data[0.value.publickey]
     // this.replicatePublicLibrary(testKey, callbacklibrary)
     callback(data)
@@ -161,8 +156,6 @@ PeerStoreWorker.prototype.listWarmPeers = function (callback, callbacklibrary) {
   this.datastorePeers.list( { ifAvailable: true }, (err, data) => {
     // sync with the main peer in the warm list
     // check the public network library and check for updates
-    console.log('warm list')
-    console.log(data[0])
     let testKey = 'a373cba8dd96e8d64856925faf1ca85f9e755441ded7a866978c18320437c72e' // data[0.value.publickey]
     this.replicatePublicLibrary(testKey, callbacklibrary)
     callback(data)
@@ -244,7 +237,6 @@ PeerStoreWorker.prototype.openLibrary = function (pk, callback) {
 */
 PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
   // replicate
-  console.log('public library setup checking updats')
   const localthis = this
   let liveSwarm = hyperswarm()
   var connectCount = 0
@@ -257,7 +249,6 @@ PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
       announce: true // optional- announce yourself as a connection target
     })
     this.datastoreNL2.ready(() => {
-      console.log('ready to do PL replication?')
       liveSwarm.on('connection', function (socket, details) {
         console.log('swarm connect peer')
         connectCount++
@@ -267,7 +258,6 @@ PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
         // localthis.datastoreNL2.list( { ifAvailable: true }, callback)
         // keep checking for new updates to network library (need to filter when bigger network)
         function updatePublicLibrary() {
-          console.log('check public library update')
           pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
           localthis.datastoreNL2.list( { ifAvailable: true }, callback)
         }
@@ -363,7 +353,6 @@ PeerStoreWorker.prototype.lifeboardStoreRefContract = function (refContract) {
   // save
   const localthis = this
   this.datastoreLifeboards.put(refContract.hash, refContract.contract, function () {
-    console.log('saved hypertrie OK-- lifeboard')
     // localthis.datastoreLifeboards.get(refContract.hash, console.log)
   })
   // this should be done via callback TODO
