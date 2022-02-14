@@ -17,8 +17,6 @@ let jwtList = []
 const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
 let peerStoreLive =  new DatastoreWorker() // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
-// OK with safeFLOW setup then bring peerDatastores to life
-peerStoreLive.setupDatastores()
 const liveParser = new FileParser()
 let kbidStoreLive // not in use
 const liveSafeFLOW = new SafeFLOW()
@@ -164,14 +162,12 @@ wsServer.on('connection', function ws(ws) {
     }
     // logic for incoming request flows
     const o = JSON.parse(msg)
-    console.log('peer link IN message')
-    console.log(o)
+    // console.log('peer link IN message')
+    // console.log(o)
     // first check if firstime connect
     if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
-      console.log('safeFLOW logic START CONNECT')
       if (o.action === 'auth') {
         // secure connect to safeFLOW
-        console.log('auth start')
         let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
         // OK with safeFLOW setup then bring peerDatastores to life
         peerStoreLive.setupDatastores()
@@ -182,13 +178,15 @@ wsServer.on('connection', function ws(ws) {
         let authPeer = false
         for (let pID of allowPeers) {
           if (pID.peer === o.data.peer && pID.pw === o.data.password) {
+            // OK with safeFLOW setup then bring peerDatastores to life
+            // peerStoreLive.setupDatastores()
             authPeer = true
           }
         }
         if (authPeer === true) {
           // setup safeFLOW
           jwtList.push('jwttoken')
-          let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+          // let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
           // send back JWT
           authStatus.jwt = 'jwttoken'
           ws.send(JSON.stringify(authStatus))
@@ -200,17 +198,17 @@ wsServer.on('connection', function ws(ws) {
     // need to check if cloud account is allow access to process message?
     // be good use of JWT TODO
     // valid jwt?
-    let jwtStatus = false
+    o.jwt = 'jwttoken' // allow for local setup
+    let jwtStatus = true  // set to false for cloud
     for (let pt of jwtList) {
       if (pt === o.jwt) {
-        console.log('yes value JWT allow access')
         jwtStatus = true
       } else {
-        console.log('token not valid sign in again')
+        console.log('for use in cloud')
+        jwtStatus = true
       }
     }
     if (jwtStatus === true) {
-      console.log('cloud access auth')
       if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
         if (o.action === 'question') {
           // send to CALE NLP path
@@ -229,7 +227,7 @@ wsServer.on('connection', function ws(ws) {
         }
       } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
         console.log('safeFLOW logic')
-        if (o.action === 'auth') {
+        /* if (o.action === 'auth') {
           // secure connect to safeFLOW
           console.log('auth start')
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
@@ -256,8 +254,8 @@ wsServer.on('connection', function ws(ws) {
             ws.send(JSON.stringify(authStatus))
           } else {
             console.log('lets send message failed auth')
-          }
-        } else if (o.action === 'dataAPIauth') {
+          } */
+        if (o.action === 'dataAPIauth') {
             console.log('auth APIS third party datastore(s)')
             let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
             // if verified then load starting experiments into ECS-safeFLOW
