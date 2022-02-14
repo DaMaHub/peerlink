@@ -107,6 +107,8 @@ FileParser.prototype.extractCSVheaders = function (o, lineData) {
   let delimiter = ''
   if (o.data.info.delimiter === 'tab') {
     delimiter = "\t"
+  } else if (o.data.info.delimiter === ';') {
+    delimiter = ";"
   } else {
     delimiter = ","
   }
