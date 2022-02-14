@@ -2,6 +2,7 @@
 import { createServer } from 'https'
 // import { createServer } from 'http'
 import fs from 'fs'
+import crypto from 'crypto'
 import { WebSocketServer } from 'ws'
 import CaleAi from 'cale-holism'
 import LibComposer from 'librarycomposer'
@@ -186,10 +187,12 @@ wsServer.on('connection', function ws(ws) {
         }
         if (authPeer === true) {
           // setup safeFLOW
-          jwtList.push('jwttoken')
+          // form token  (need to upgrade proper JWT)
+          let tokenString = crypto.randomBytes(64).toString('hex')
+          jwtList.push(tokenString)
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
           // send back JWT
-          authStatus.jwt = 'jwttoken'
+          authStatus.jwt = tokenString
           ws.send(JSON.stringify(authStatus))
         } else {
           console.log('lets send message failed auth')
@@ -200,6 +203,8 @@ wsServer.on('connection', function ws(ws) {
     // be good use of JWT TODO
     // valid jwt?
     let jwtStatus = false
+    console.log(jwtList)
+    console.log(o.jwt)
     for (let pt of jwtList) {
       if (pt === o.jwt) {
         console.log('yes value JWT allow access')
@@ -238,7 +243,9 @@ wsServer.on('connection', function ws(ws) {
         } else if (o.action === 'cloudauth') {
           console.log('cloud auth START')
           // does the username and password on the allow list?
-          let allowPeers = [ { peer: 'aboynejames@gmail.com', pw: '123' }, { peer: 'bioregion@gmail.com', pw: '123' }, { peer: 'damahub@gmail.com', pw: '123' }]
+          // form token  (need to upgrade proper JWT)
+          let tokenString = crypto.randomBytes(64).toString('hex')
+          jwtList.push(tokenString)
           let authPeer = false
           for (let pID of allowPeers) {
             if (pID.peer === o.data.peer && pID.pw === o.data.password) {
@@ -251,7 +258,7 @@ wsServer.on('connection', function ws(ws) {
             jwtList.push('jwttoken')
             let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
             // send back JWT
-            authStatus.jwt = 'jwttoken'
+            authStatus.jwt = tokenString
             ws.send(JSON.stringify(authStatus))
           } else {
             console.log('lets send message failed auth')
