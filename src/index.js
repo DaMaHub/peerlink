@@ -171,7 +171,6 @@ wsServer.on('connection', function ws(ws) {
       console.log('safeFLOW logic START CONNECT')
       if (o.action === 'auth') {
         // secure connect to safeFLOW
-        console.log('auth start')
         let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
         // OK with safeFLOW setup then bring peerDatastores to life
         peerStoreLive.setupDatastores()
