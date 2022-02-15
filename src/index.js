@@ -196,6 +196,11 @@ wsServer.on('connection', function ws(ws) {
           ws.send(JSON.stringify(authStatus))
         } else {
           console.log('lets send message failed auth')
+          let authFailStatus = {}
+          authFailStatus.safeflow = true
+          authFailStatus.type = 'auth'
+          authFailStatus.auth = false
+          ws.send(JSON.stringify(authFailStatus))
         }
       }
     }
@@ -203,14 +208,16 @@ wsServer.on('connection', function ws(ws) {
     // be good use of JWT TODO
     // valid jwt?
     let jwtStatus = false
-    console.log(jwtList)
-    console.log(o.jwt)
     for (let pt of jwtList) {
       if (pt === o.jwt) {
-        console.log('yes value JWT allow access')
         jwtStatus = true
       } else {
         console.log('token not valid sign in again')
+        /* let authFailStatus = {}
+        authFailStatus.safeflow = true
+        authFailStatus.type = 'auth'
+        authFailStatus.auth = false
+        ws.send(JSON.stringify(authFailStatus)) */
       }
     }
     if (jwtStatus === true) {
@@ -262,6 +269,11 @@ wsServer.on('connection', function ws(ws) {
             ws.send(JSON.stringify(authStatus))
           } else {
             console.log('lets send message failed auth')
+            let authFailStatus = {}
+            authFailStatus.safeflow = true
+            authFailStatus.type = 'auth'
+            authFailStatus.auth = false
+            ws.send(JSON.stringify(authFailStatus))
           }
         } else if (o.action === 'dataAPIauth') {
             console.log('auth APIS third party datastore(s)')
@@ -275,6 +287,8 @@ wsServer.on('connection', function ws(ws) {
           // remove JWT from list
           let index = jwtList.indexOf(o.jwt)
           jwtList.splice(index, 1)
+          console.log('discioont post')
+          console.log(jwtList)
           // process.exit(0)
         } else if (o.action === 'networkexperiment') {
           // send summary info that HOP has received NXP bundle
