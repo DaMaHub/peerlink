@@ -16,6 +16,7 @@ import util from 'util'
 import events from 'events'
 import axios from 'axios'
 import csv from 'csv-parser'
+import crypto from 'crypto'
 
 var FileParser = function () {
   events.EventEmitter.call(this)
@@ -33,7 +34,6 @@ util.inherits(FileParser, events.EventEmitter)
 *
 */
 FileParser.prototype.localFileParse = async function (o, ws) {
-  console.log('local files')
   // then prepare file for HOP i.e. convert to json
   // file input management
   // extract out the headers name for columns
@@ -52,8 +52,6 @@ FileParser.prototype.localFileParse = async function (o, ws) {
 *
 */
 FileParser.prototype.webFileParse = async function (o, ws) {
-  console.log('web files')
-  console.log(o)
   const localthis = this
   let dataWeb = await axios.get(o.data.websource)
     .catch(function (error) {
@@ -69,7 +67,6 @@ FileParser.prototype.webFileParse = async function (o, ws) {
       match = line
     }
   })
-  console.log(match.length)
   // localthis.linesLimit = lines.slice(0, 30)
   let headerInfo = localthis.extractCSVheaders(o, match)
   let newPathFile = localthis.saveOriginalProtocolWeb(o, dataSource)
@@ -102,8 +99,6 @@ FileParser.prototype.extractCSVHeaderInfo = function (o) {
 *
 */
 FileParser.prototype.extractCSVheaders = function (o, lineData) {
-  console.log('ext csv')
-  console.log(lineData)
   let delimiter = ''
   if (o.data.info.delimiter === 'tab') {
     delimiter = "\t"
@@ -200,14 +195,15 @@ FileParser.prototype.saveOriginalProtocol = function (o) {
 *
 */
 FileParser.prototype.saveOriginalProtocolWeb = function (o, data) {
+  const hashURL = crypto.createHash('sha256').update(o.data.websource).digest('hex')
+  const fileNewName = hashURL + '.csv'
   // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
-  let newPathcsv = os.homedir() + '/peerlink/csv/' + o.data.name
-  fs.writeFile(newPathcsv, data, function (err, data) {
+  let newPathcsv = os.homedir() + '/peerlink/csv/' + fileNewName
+  fs.writeFile(newPathcsv, JSON.stringify(data), function (err, data) {
     if (err) {
       return console.log(err)
     }
     console.log('data save source')
-    console.log(data)
   })
   return newPathcsv
 }

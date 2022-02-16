@@ -303,11 +303,17 @@ wsServer.on('connection', function ws(ws) {
         }
       } else if (o.type.trim() === 'library' ) {
         // library routing
+        console.log('library')
+        console.log(o)
         if (o.reftype.trim() === 'convert-csv-json') {
+          console.log('conver csv to json')
           // save protocol original file save and JSON for HOP
           if (o.data.source === 'local') {
             await liveParser.localFileParse(o, ws)
           } else if (o.data.source === 'web') {
+            console.log('web')
+            console.log(o)
+            console.log(ws)
             liveParser.webFileParse(o, ws)
           }
         } else if (o.reftype.trim() === 'viewpublickey') {
