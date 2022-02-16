@@ -303,17 +303,11 @@ wsServer.on('connection', function ws(ws) {
         }
       } else if (o.type.trim() === 'library' ) {
         // library routing
-        console.log('library')
-        console.log(o)
         if (o.reftype.trim() === 'convert-csv-json') {
-          console.log('conver csv to json')
           // save protocol original file save and JSON for HOP
           if (o.data.source === 'local') {
             await liveParser.localFileParse(o, ws)
           } else if (o.data.source === 'web') {
-            console.log('web')
-            console.log(o)
-            console.log(ws)
             liveParser.webFileParse(o, ws)
           }
         } else if (o.reftype.trim() === 'viewpublickey') {
@@ -531,12 +525,10 @@ wsServer.on('connection', function ws(ws) {
           const savedFeedback = peerStoreLive.libraryStoreRefContract(moduleRefContract)
           ws.send(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'newlifeboard') {
-          console.log('new lifeboard ref cont to create')
           let lifeboardRefContract = liveLibrary.liveComposer.lifeboardComposer(o.data, 'new')
           const saveLB = peerStoreLive.lifeboardStoreRefContract(lifeboardRefContract)
           ws.send(JSON.stringify(saveLB))
         } else if (o.reftype.trim() === 'addlifeboard') {
-          console.log('add link to master lifebarod ref contract')
           let lifeboardMember = liveLibrary.liveComposer.lifeboardComposer(o.data, 'member')
           const saveLBmember = peerStoreLive.lifeboardStoreRefContract(lifeboardMember)
           ws.send(JSON.stringify(saveLBmember))

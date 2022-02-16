@@ -67,11 +67,14 @@ FileParser.prototype.webFileParse = async function (o, ws) {
       match = line
     }
   })
+  // create new file name hash of source url
+  const hashURL = crypto.createHash('sha256').update(o.data.websource).digest('hex')
+  const fileNewName = hashURL + '.csv'
   // localthis.linesLimit = lines.slice(0, 30)
   let headerInfo = localthis.extractCSVheaders(o, match)
-  let newPathFile = localthis.saveOriginalProtocolWeb(o, dataSource)
+  let newPathFile = localthis.saveOriginalProtocolWeb(o, dataSource, fileNewName)
   const praser = await localthis.readFileStream(newPathFile, headerInfo)
-  this.convertJSON(o, ws, headerInfo, praser)
+  this.convertJSON(o, ws, headerInfo, praser, 'web', fileNewName)
 }
 
 /**
@@ -125,7 +128,6 @@ FileParser.prototype.extractCSVheaders = function (o, lineData) {
 *
 */
 FileParser.prototype.readFileStream = async function (fpath, headerSet) {
-  console.log(fpath)
   // function readStream (fpath, headerSet, delimiter, startno) {
   return new Promise((resolve, reject) => {
     const results = []
@@ -143,8 +145,13 @@ FileParser.prototype.readFileStream = async function (fpath, headerSet) {
 * @method convertJSON
 *
 */
-FileParser.prototype.convertJSON = function (o, ws, headerSet, results) {
-  //function jsonConvert (results) {
+FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, newFilename) {
+  let fileName = ''
+  if (source !== 'web') {
+    fileName = o.data.name
+  } else {
+    fileName = newFilename
+  }
   const flowList = []
   for (const rs of results) {
     // console.log(rs)
@@ -155,7 +162,7 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results) {
   }
   const jsonFlow = JSON.stringify(flowList)
   // console.log(jsonFlow)
-  fs.writeFile(os.homedir() + '/peerlink/json/' + o.data.name + '.json', jsonFlow, 'utf8', function (err) {
+  fs.writeFile(os.homedir() + '/peerlink/json/' + fileName + '.json', jsonFlow, 'utf8', function (err) {
     if (err) {
       console.log('An error occured while writing JSON Object to File.')
       return console.log(err)
@@ -164,7 +171,7 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results) {
     // data back to peer
     let fileFeedback = {}
     fileFeedback.success = true
-    fileFeedback.path = '/peerlink/json/' + o.data.name + '.json'
+    fileFeedback.path = '/peerlink/json/' + fileName + '.json'
     fileFeedback.columns = headerSet.splitwords
     let storeFeedback = {}
     storeFeedback.type = 'file-save'
@@ -194,9 +201,7 @@ FileParser.prototype.saveOriginalProtocol = function (o) {
 * @method saveOriginalProtocol
 *
 */
-FileParser.prototype.saveOriginalProtocolWeb = function (o, data) {
-  const hashURL = crypto.createHash('sha256').update(o.data.websource).digest('hex')
-  const fileNewName = hashURL + '.csv'
+FileParser.prototype.saveOriginalProtocolWeb = function (o, data, fileNewName) {
   // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
   let newPathcsv = os.homedir() + '/peerlink/csv/' + fileNewName
   fs.writeFile(newPathcsv, JSON.stringify(data), function (err, data) {
