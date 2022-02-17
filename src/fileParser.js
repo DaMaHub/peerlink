@@ -1,4 +1,6 @@
 'use strict'
+import atob from 'atob'
+
 /**
 *  FileParser
 *
@@ -43,7 +45,7 @@ FileParser.prototype.localFileParse = async function (o, ws) {
   //  csv to JSON convertion and save into HOP
   // const praser = readStream(newPathcsv, headerSet, delimiter, dataline)
   const praser = await this.readFileStream(newPathFile, headerSet)
-  this.convertJSON(o, ws, headerSet, praser)
+  this.convertJSON(o, ws, headerSet, praser, 'local', null)
 }
 
 /**
@@ -83,15 +85,29 @@ FileParser.prototype.webFileParse = async function (o, ws) {
 *
 */
 FileParser.prototype.extractCSVHeaderInfo = function (o) {
+  // console.log(o)
   let match = ''
   let lcounter = 0
-  const allFileContents = fs.readFileSync(o.data.path, 'utf-8')
-  allFileContents.split(/\r?\n/).forEach(line =>  {
-    lcounter++
-    if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
-      match = line
-    }
-  })
+  // if local peer setup then file path is available
+  if (o.data.web === 'weblocal') {
+    const dataURI = o.data.path
+    const dataCSV = atob(dataURI.split(',')[1]);
+    dataCSV.split(/\r?\n/).forEach(line =>  {
+      lcounter++
+      if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
+        match = line
+      }
+    })
+  } else {
+    // let filePathCSV = fs.existsSync(os.homedir() + '/peerlink/csv/') + o.data.name
+    const allFileContents = fs.readFileSync(filePathCSV, 'utf-8')
+    allFileContents.split(/\r?\n/).forEach(line =>  {
+      lcounter++
+      if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
+        match = line
+      }
+    })
+  }
   let headerInfo = this.extractCSVheaders(o, match)
   return headerInfo
 }
@@ -188,17 +204,28 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
 */
 FileParser.prototype.saveOriginalProtocol = function (o) {
   // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
-  let newPathcsv = os.homedir() + '/peerlink/csv/' + o.data.name
-  fs.rename(o.data.path, newPathcsv, function (err) {
-    if (err) throw err
-    console.log('File Renamed.')
-  })
+  let newPathcsv = os.homedir() + '/peerlink/csv/bb.csv' //+ o.data.name
+  if (o.data.web === 'weblocal') {
+    const dataURI = o.data.path
+    const dataCSV = atob(dataURI.split(',')[1]);
+    fs.writeFile(newPathcsv, JSON.stringify(dataCSV), function (err, data) {
+      if (err) {
+        return console.log(err)
+      }
+    })
+  } else {
+    console.log('path not web')
+    fs.rename(o.data.path, newPathcsv, function (err) {
+      if (err) throw err
+      console.log('File Renamed.')
+    })
+  }
   return newPathcsv
 }
 
 /**
 * keep copy of source entering network library from web
-* @method saveOriginalProtocol
+* @method saveOriginalProtocolWeb
 *
 */
 FileParser.prototype.saveOriginalProtocolWeb = function (o, data, fileNewName) {

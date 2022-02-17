@@ -16,6 +16,7 @@
     "bab": "babel src -d babout"
   },
   "dependencies": {
+    "atob": "^2.1.2",
     "cale-holism": "^0.0.2",
     "chalk": "^2.4.1",
     "csv-parser": "^3.0.0",
