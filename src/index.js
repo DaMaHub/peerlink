@@ -304,12 +304,20 @@ wsServer.on('connection', function ws(ws) {
       } else if (o.type.trim() === 'library' ) {
         // library routing
         if (o.reftype.trim() === 'convert-csv-json') {
+          console.log('csv jsjon')
+          console.log(o)
           // save protocol original file save and JSON for HOP
           if (o.data.source === 'local') {
             await liveParser.localFileParse(o, ws)
           } else if (o.data.source === 'web') {
             liveParser.webFileParse(o, ws)
           }
+        } else if (o.reftype.trim() === 'save-json-json') {
+            if (o.data.source === 'local') {
+              await liveParser.localJSONfile(o, ws)
+            } else if (o.data.source === 'web') {
+              liveParser.webJSONfile(o, ws)
+            }
         } else if (o.reftype.trim() === 'viewpublickey') {
           // two peer syncing reference contracts
           const pubkey = peerStoreLive.singlePublicKey('', callbackKey)

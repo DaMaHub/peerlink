@@ -31,6 +31,47 @@ var FileParser = function () {
 util.inherits(FileParser, events.EventEmitter)
 
 /**
+* local json file extract header for auto complete
+* @method
+*
+*/
+FileParser.prototype.localJSONfile = async function (o, ws) {
+  let headerSet = this.extractJSONkeys(o)
+  // data back to peer
+  let fileFeedback = {}
+  fileFeedback.success = true
+  fileFeedback.path = '/peerlink/json/' + o.data.name + '.json'
+  fileFeedback.columns = headerSet
+  let storeFeedback = {}
+  storeFeedback.type = 'file-save'
+  storeFeedback.action = 'library'
+  storeFeedback.data = fileFeedback
+  ws.send(JSON.stringify(storeFeedback))
+}
+
+
+/**
+* web json file for saving
+* @method webJSONfile
+*
+*/
+FileParser.prototype.webJSONfile = async function (o, ws) {
+  // then prepare file for HOP i.e. convert to json
+  const lines = JSON.parse(reader.result)
+  localthis.linesLimit = lines
+  // data back to peer
+  /* let fileFeedback = {}
+  fileFeedback.success = true
+  fileFeedback.path = '/peerlink/json/' + fileName + '.json'
+  fileFeedback.columns = headerSet.splitwords
+  let storeFeedback = {}
+  storeFeedback.type = 'json-file-save'
+  storeFeedback.action = 'library'
+  storeFeedback.data = fileFeedback
+  ws.send(JSON.stringify(storeFeedback)) */
+}
+
+/**
 * local file parser save etc
 * @method localFileParse
 *
@@ -85,7 +126,6 @@ FileParser.prototype.webFileParse = async function (o, ws) {
 *
 */
 FileParser.prototype.extractCSVHeaderInfo = function (o) {
-  // console.log(o)
   let match = ''
   let lcounter = 0
   // if local peer setup then file path is available
@@ -110,6 +150,32 @@ FileParser.prototype.extractCSVHeaderInfo = function (o) {
   }
   let headerInfo = this.extractCSVheaders(o, match)
   return headerInfo
+}
+
+/**
+* read JSON row and extact keys
+* @method extractJSONkeys
+*
+*/
+FileParser.prototype.extractJSONkeys = function (o) {
+  let jsonKeys = []
+  // if local peer setup then file path is available
+  if (o.data.web === 'weblocal') {
+    const dataURI = o.data.path
+    const dataCSV = atob(dataURI.split(',')[1])
+    const toJSON = JSON.parse(dataCSV)
+    jsonKeys = Object.keys(toJSON[0])
+  } else {
+    // let filePathCSV = fs.existsSync(os.homedir() + '/peerlink/csv/') + o.data.name
+    const allFileContents = fs.readFileSync(filePathCSV, 'utf-8')
+    allFileContents.split(/\r?\n/).forEach(line =>  {
+      lcounter++
+      if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
+        jsonKeys = line
+      }
+    })
+  }
+  return jsonKeys
 }
 
 /**
@@ -170,20 +236,17 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
   }
   const flowList = []
   for (const rs of results) {
-    // console.log(rs)
     const dateFormat = new Date(rs.datetime)
     const msDate = dateFormat.getTime()
     rs.datetime = msDate / 1000
     flowList.push(rs)
   }
   const jsonFlow = JSON.stringify(flowList)
-  // console.log(jsonFlow)
   fs.writeFile(os.homedir() + '/peerlink/json/' + fileName + '.json', jsonFlow, 'utf8', function (err) {
     if (err) {
       console.log('An error occured while writing JSON Object to File.')
       return console.log(err)
     }
-    console.log('JSON file has been saved.')
     // data back to peer
     let fileFeedback = {}
     fileFeedback.success = true
@@ -207,7 +270,7 @@ FileParser.prototype.saveOriginalProtocol = function (o) {
   let newPathcsv = os.homedir() + '/peerlink/csv/bb.csv' //+ o.data.name
   if (o.data.web === 'weblocal') {
     const dataURI = o.data.path
-    const dataCSV = atob(dataURI.split(',')[1]);
+    const dataCSV = atob(dataURI.split(',')[1])
     fs.writeFile(newPathcsv, JSON.stringify(dataCSV), function (err, data) {
       if (err) {
         return console.log(err)
