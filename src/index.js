@@ -45,6 +45,7 @@ server.on('error', function(e) {
 
 server.listen(9888, () => {
   console.log('listening on *:9888')
+  console.log(process.env.npm_package_version)
 })
 
 const wsServer = new WebSocketServer({ server })
@@ -165,11 +166,10 @@ wsServer.on('connection', function ws(ws) {
     }
     // logic for incoming request flows
     const o = JSON.parse(msg)
-    console.log('peer link IN message')
-    console.log(o)
+    // console.log('peer link IN message')
+    // console.log(o)
     // first check if firstime connect
     if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
-      console.log('safeFLOW logic START CONNECT')
       if (o.action === 'auth') {
         // secure connect to safeFLOW
         let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
@@ -195,7 +195,6 @@ wsServer.on('connection', function ws(ws) {
           authStatus.jwt = tokenString
           ws.send(JSON.stringify(authStatus))
         } else {
-          console.log('lets send message failed auth')
           let authFailStatus = {}
           authFailStatus.safeflow = true
           authFailStatus.type = 'auth'
@@ -212,7 +211,6 @@ wsServer.on('connection', function ws(ws) {
       if (pt === o.jwt) {
         jwtStatus = true
       } else {
-        console.log('token not valid sign in again')
         /* let authFailStatus = {}
         authFailStatus.safeflow = true
         authFailStatus.type = 'auth'
@@ -221,7 +219,6 @@ wsServer.on('connection', function ws(ws) {
       }
     }
     if (jwtStatus === true) {
-      console.log('cloud access auth')
       if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
         if (o.action === 'question') {
           // send to CALE NLP path
@@ -242,13 +239,11 @@ wsServer.on('connection', function ws(ws) {
         console.log('safeFLOW logic')
         if (o.action === 'auth') {
           // secure connect to safeFLOW
-          console.log('auth start')
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
           // OK with safeFLOW setup then bring peerDatastores to life
           peerStoreLive.setupDatastores()
           ws.send(JSON.stringify(authStatus))
         } else if (o.action === 'cloudauth') {
-          console.log('cloud auth START')
           // does the username and password on the allow list?
           // form token  (need to upgrade proper JWT)
           let tokenString = crypto.randomBytes(64).toString('hex')
@@ -261,14 +256,11 @@ wsServer.on('connection', function ws(ws) {
           }
           if (authPeer === true) {
             // setup safeFLOW
-            console.log('starting connection to safeFLOW success')
-            jwtList.push('jwttoken')
             let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
             // send back JWT
             authStatus.jwt = tokenString
             ws.send(JSON.stringify(authStatus))
           } else {
-            console.log('lets send message failed auth')
             let authFailStatus = {}
             authFailStatus.safeflow = true
             authFailStatus.type = 'auth'
@@ -276,20 +268,22 @@ wsServer.on('connection', function ws(ws) {
             ws.send(JSON.stringify(authFailStatus))
           }
         } else if (o.action === 'dataAPIauth') {
-            console.log('auth APIS third party datastore(s)')
             let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
             // if verified then load starting experiments into ECS-safeFLOW
             ws.send(JSON.stringify(datastoreStatus))
             // check the public network library
             // peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
         } else if (o.action === 'disconnect') {
+          console.log('safelow ws exit')
           // in cloud mode cannot close whole app
           // remove JWT from list
           let index = jwtList.indexOf(o.jwt)
           jwtList.splice(index, 1)
-          console.log('discioont post')
-          console.log(jwtList)
           // process.exit(0)
+          ws.on('close', ws => {
+            console.log('close manual')
+            // process.exit(0)
+          })
         } else if (o.action === 'networkexperiment') {
           // send summary info that HOP has received NXP bundle
           let ecsData = await liveSafeFLOW.startFlow(o.data)

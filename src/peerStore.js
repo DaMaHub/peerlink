@@ -156,8 +156,8 @@ PeerStoreWorker.prototype.listWarmPeers = function (callback, callbacklibrary) {
   this.datastorePeers.list( { ifAvailable: true }, (err, data) => {
     // sync with the main peer in the warm list
     // check the public network library and check for updates
-    let testKey = 'a373cba8dd96e8d64856925faf1ca85f9e755441ded7a866978c18320437c72e' // data[0.value.publickey]
-    this.replicatePublicLibrary(testKey, callbacklibrary)
+    // let testKey = 'a373cba8dd96e8d64856925faf1ca85f9e755441ded7a866978c18320437c72e' // data[0.value.publickey]
+    // this.replicatePublicLibrary(testKey, callbacklibrary)
     callback(data)
   })
 }
@@ -250,18 +250,18 @@ PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
     })
     this.datastoreNL2.ready(() => {
       liveSwarm.on('connection', function (socket, details) {
-        console.log('swarm connect peer')
-        connectCount++
-        console.log(connectCount)
+        // console.log('swarm connect peer')
+        // connectCount++
+        // console.log(connectCount)
         // pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
         // console.log('after replication')
         // localthis.datastoreNL2.list( { ifAvailable: true }, callback)
         // keep checking for new updates to network library (need to filter when bigger network)
-        function updatePublicLibrary() {
+        /* function updatePublicLibrary() {
           pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
           localthis.datastoreNL2.list( { ifAvailable: true }, callback)
         }
-        // setInterval(updatePublicLibrary, 2000)
+        // setInterval(updatePublicLibrary, 2000) */
       })
     })
   }
