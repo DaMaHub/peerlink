@@ -236,7 +236,6 @@ wsServer.on('connection', function ws(ws) {
           ws.send(JSON.stringify(futureData)) */
         }
       } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
-        console.log('safeFLOW logic')
         if (o.action === 'auth') {
           // secure connect to safeFLOW
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
@@ -298,8 +297,6 @@ wsServer.on('connection', function ws(ws) {
       } else if (o.type.trim() === 'library' ) {
         // library routing
         if (o.reftype.trim() === 'convert-csv-json') {
-          console.log('csv jsjon')
-          console.log(o)
           // save protocol original file save and JSON for HOP
           if (o.data.source === 'local') {
             await liveParser.localFileParse(o, ws)
@@ -328,7 +325,6 @@ wsServer.on('connection', function ws(ws) {
           // two peer syncing reference contracts
           const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
         } else if (o.reftype.trim() === 'publiclibrary') {
-          // console.log('public library')
           peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
         } else if (o.reftype.trim() === 'privatelibrary') {
           peerStoreLive.peerGETRefContracts('all', callbackPeer)

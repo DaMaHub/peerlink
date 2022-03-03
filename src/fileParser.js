@@ -85,8 +85,8 @@ FileParser.prototype.localFileParse = async function (o, ws) {
   let newPathFile = this.saveOriginalProtocol(o)
   //  csv to JSON convertion and save into HOP
   // const praser = readStream(newPathcsv, headerSet, delimiter, dataline)
-  const praser = await this.readFileStream(newPathFile, headerSet)
-  this.convertJSON(o, ws, headerSet, praser, 'local', null)
+  const parser = await this.readFileStream(newPathFile, headerSet)
+  this.convertJSON(o, ws, headerSet, parser, 'local', null)
 }
 
 /**
@@ -234,11 +234,12 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
   } else {
     fileName = newFilename
   }
+  const datacolumn = o.data.info.datename
   const flowList = []
   for (const rs of results) {
-    const dateFormat = new Date(rs.datetime)
+    const dateFormat = new Date(rs[datacolumn])
     const msDate = dateFormat.getTime()
-    rs.datetime = msDate / 1000
+    rs[datacolumn] = msDate / 1000
     flowList.push(rs)
   }
   const jsonFlow = JSON.stringify(flowList)
@@ -267,17 +268,16 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
 */
 FileParser.prototype.saveOriginalProtocol = function (o) {
   // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
-  let newPathcsv = os.homedir() + '/peerlink/csv/bb.csv' //+ o.data.name
+  let newPathcsv = os.homedir() + '/peerlink/csv/' + o.data.name
   if (o.data.web === 'weblocal') {
     const dataURI = o.data.path
     const dataCSV = atob(dataURI.split(',')[1])
-    fs.writeFile(newPathcsv, JSON.stringify(dataCSV), function (err, data) {
+    fs.writeFile(newPathcsv, dataCSV, function (err, data) {
       if (err) {
         return console.log(err)
       }
     })
   } else {
-    console.log('path not web')
     fs.rename(o.data.path, newPathcsv, function (err) {
       if (err) throw err
       console.log('File Renamed.')
@@ -294,11 +294,10 @@ FileParser.prototype.saveOriginalProtocol = function (o) {
 FileParser.prototype.saveOriginalProtocolWeb = function (o, data, fileNewName) {
   // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
   let newPathcsv = os.homedir() + '/peerlink/csv/' + fileNewName
-  fs.writeFile(newPathcsv, JSON.stringify(data), function (err, data) {
+  fs.writeFile(newPathcsv, data, function (err, data) {
     if (err) {
       return console.log(err)
     }
-    console.log('data save source')
   })
   return newPathcsv
 }
