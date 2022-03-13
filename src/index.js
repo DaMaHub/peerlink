@@ -22,7 +22,8 @@ let peerStoreLive =  new DatastoreWorker() // what PtoP infrastructure running o
 peerStoreLive.setupDatastores()
 const liveParser = new FileParser()
 let kbidStoreLive // not in use
-const liveSafeFLOW = new SafeFLOW()
+// const liveSafeFLOW = new SafeFLOW()
+let liveSafeFLOW = {}
 let libraryData = {}
 // https options for crypto
 const options = {
@@ -50,12 +51,10 @@ server.listen(9888, () => {
 
 const wsServer = new WebSocketServer({ server })
 
-// WebSocket server
-wsServer.on('connection', function ws(ws) {
-// wsServer.on('request', request => {
-  // let ws = request.accept(null, request.origin)
-  console.log('peer connected websocket')
-  // call back from results etc needing to get back to safeFLOW-ecs
+// listenr for data back from ECS
+function peerListeners (ws) {
+  console.log('batch of safeFlowlisterners')
+  liveSafeFLOW = new SafeFLOW()
   function resultsCallback (entity, err, data) {
     let resultMatch = {}
     if (data !== null) {
@@ -73,6 +72,7 @@ wsServer.on('connection', function ws(ws) {
     data.type = 'newEntity'
     ws.send(JSON.stringify(data))
   })
+  let deCount = liveSafeFLOW.listenerCount('displayEntity')
   liveSafeFLOW.on('displayEntityRange', (data) => {
     data.type = 'newEntityRange'
     ws.send(JSON.stringify(data))
@@ -102,6 +102,12 @@ wsServer.on('connection', function ws(ws) {
   liveSafeFLOW.on('kbledgerEntry', (data) => {
     const savedFeedback = peerStoreLive.peerKBLentry(data)
   })
+}
+// WebSocket server
+wsServer.on('connection', function ws(ws) {
+  console.log('peer connected websocket')
+  // call back from results etc needing to get back to safeFLOW-ecs
+    peerListeners(ws)
 
   ws.on('message', async msg => {
     function callbackKey (data) {
@@ -279,9 +285,12 @@ wsServer.on('connection', function ws(ws) {
           let index = jwtList.indexOf(o.jwt)
           jwtList.splice(index, 1)
           // process.exit(0)
+          // tell safeflow to empty listeners
+          liveSafeFLOW.emptyListeners(o)
           ws.on('close', ws => {
             console.log('close manual')
             // process.exit(0)
+            liveSafeFLOW.emptyListeners(o)
           })
         } else if (o.action === 'networkexperiment') {
           // send summary info that HOP has received NXP bundle
@@ -544,7 +553,11 @@ wsServer.on('connection', function ws(ws) {
   })
   ws.on('close', ws => {
     console.log('close ws')
+    liveSafeFLOW.emptyListeners('refresh')
     // process.exit(0)
+    // tell safeflow to empty listeners
+    // console.log(o.data)
+    // liveSafeFLOW.emptyListeners(o.data)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')
