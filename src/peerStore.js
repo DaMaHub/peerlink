@@ -18,9 +18,9 @@ import util from 'util'
 import events from 'events'
 import pump from 'pump'
 
-var PeerStoreWorker = function () {
+var PeerStoreWorker = function (path) {
   events.EventEmitter.call(this)
-  // this.feed = {}
+  this.storepath = path
   this.datastorePeerlibrary = {}
   this.datastoreNL = {}
   this.datastoreKBL = {}
@@ -40,12 +40,12 @@ util.inherits(PeerStoreWorker, events.EventEmitter)
 *
 */
 PeerStoreWorker.prototype.setupDatastores = function () {
-  if (fs.existsSync(os.homedir() + '/peerlink')) {
+  if (fs.existsSync(os.homedir() + this.storepath)) {
     // Do something
     // setup datastores
     this.activateDatastores()
   } else {
-    fs.mkdir(os.homedir() + '/peerlink', function(err) {
+    fs.mkdir(os.homedir() + this.storepath, function(err) {
       if (err) {
         console.log(err)
       } else {
@@ -63,21 +63,21 @@ PeerStoreWorker.prototype.setupDatastores = function () {
 *
 */
 PeerStoreWorker.prototype.activateDatastores = function () {
-  /* this.feed = hypercore(os.homedir() + '/peerlink/peerlog', {
+  /* this.feed = hypercore(os.homedir() + this.storepath + ''/peerlog', {
     valueEncoding: 'json'
   }) */
   // peer warm cold connections
-  this.datastorePeers = hypertrie(os.homedir() + '/peerlink/peernetwork.db', {valueEncoding: 'json'})
+  this.datastorePeers = hypertrie(os.homedir() + this.storepath + '/peernetwork.db', {valueEncoding: 'json'})
   // peer warm cold connections
-  this.datastoreLifeboards = hypertrie(os.homedir() + '/peerlink/peerlifeboards.db', {valueEncoding: 'json'})
+  this.datastoreLifeboards = hypertrie(os.homedir() + this.storepath + '/peerlifeboards.db', {valueEncoding: 'json'})
   // peer library of joined experiments
-  this.datastorePeerlibrary = hypertrie(os.homedir() + '/peerlink/peerlibrary.db', {valueEncoding: 'json'})
+  this.datastorePeerlibrary = hypertrie(os.homedir() + this.storepath + '/peerlibrary.db', {valueEncoding: 'json'})
   // network library public
-  this.datastoreNL = hypertrie(os.homedir() + '/peerlink/librarynetwork.db', {valueEncoding: 'json'})
+  this.datastoreNL = hypertrie(os.homedir() + this.storepath + '/librarynetwork.db', {valueEncoding: 'json'})
   // results ledger
-  this.datastoreResults = hypertrie(os.homedir() + '/peerlink/resultspeer.db', {valueEncoding: 'json'})
+  this.datastoreResults = hypertrie(os.homedir() + this.storepath + '/resultspeer.db', {valueEncoding: 'json'})
   // knowledge bundle ledger
-  this.datastoreKBL = hypertrie(os.homedir() + '/peerlink/kblpeer.db', {valueEncoding: 'json'})
+  this.datastoreKBL = hypertrie(os.homedir() + this.storepath + '/kblpeer.db', {valueEncoding: 'json'})
 }
 
 /**
@@ -243,7 +243,7 @@ PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
   let rpeer1Key = Buffer.from(key, "hex")
   // has the peers key and datastore been setup already?
   if (this.datastoreNL2 === undefined) {
-    localthis.datastoreNL2 = hypertrie(os.homedir() + '/peerlink/librarynetwork2.db', rpeer1Key, {valueEncoding: 'json'})
+    localthis.datastoreNL2 = hypertrie(os.homedir() + this.storepath + '/librarynetwork2.db', rpeer1Key, {valueEncoding: 'json'})
     liveSwarm.join(rpeer1Key, {
       lookup: true, // find & connect to peers
       announce: true // optional- announce yourself as a connection target

@@ -14,13 +14,14 @@ import os from 'os'
 import dotenv from 'dotenv'
 dotenv.config()
 
+const localpath = '/peerlink'
 let jwtList = []
 const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
-let peerStoreLive =  new DatastoreWorker() // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
+let peerStoreLive =  new DatastoreWorker(localpath) // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
 // OK with safeFLOW setup then bring peerDatastores to life
 peerStoreLive.setupDatastores()
-const liveParser = new FileParser()
+const liveParser = new FileParser(localpath)
 let kbidStoreLive // not in use
 // const liveSafeFLOW = new SafeFLOW()
 let liveSafeFLOW = {}
