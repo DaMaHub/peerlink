@@ -229,6 +229,7 @@ FileParser.prototype.readFileStream = async function (fpath, headerSet) {
 *
 */
 FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, newFilename) {
+  const localthis = this
   let fileName = ''
   if (source !== 'web') {
     fileName = o.data.name
@@ -244,7 +245,7 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
     flowList.push(rs)
   }
   const jsonFlow = JSON.stringify(flowList)
-  fs.writeFile(os.homedir() + this.storepath + '/json/' + fileName + '.json', jsonFlow, 'utf8', function (err) {
+  fs.writeFile(os.homedir() + localthis.storepath + '/json/' + fileName + '.json', jsonFlow, 'utf8', function (err) {
     if (err) {
       console.log('An error occured while writing JSON Object to File.')
       return console.log(err)
@@ -252,7 +253,7 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
     // data back to peer
     let fileFeedback = {}
     fileFeedback.success = true
-    fileFeedback.path = this.storepath + '/json/' + fileName + '.json'
+    fileFeedback.path = localthis.storepath + '/json/' + fileName + '.json'
     fileFeedback.columns = headerSet.splitwords
     let storeFeedback = {}
     storeFeedback.type = 'file-save'

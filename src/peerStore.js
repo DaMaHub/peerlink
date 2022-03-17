@@ -310,6 +310,17 @@ PeerStoreWorker.prototype.peerGETRefContracts = function (getType, callback) {
 }
 
 /**
+* remove NXP ref contract from peer library
+* @method peerREMOVERefContracts
+*
+*/
+PeerStoreWorker.prototype.peerREMOVERefContracts = function (refcontid, callback) {
+  // read
+  let databack = this.datastorePeerlibrary.del(refcontid , callback)
+  return true
+}
+
+/**
 * lookup specific lifebaord reference contract
 * @method getLifeboardContract
 *
