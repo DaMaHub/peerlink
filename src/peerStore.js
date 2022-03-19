@@ -24,7 +24,7 @@ var PeerStoreWorker = function (path) {
   this.datastorePeerlibrary = {}
   this.datastoreNL = {}
   this.datastoreKBL = {}
-  this.dataswarm = hyperswarm()
+  this.dataswarm = new hyperswarm()
   this.listdata = []
 }
 
