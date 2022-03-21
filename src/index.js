@@ -25,6 +25,7 @@ const liveParser = new FileParser(localpath)
 let kbidStoreLive // not in use
 // const liveSafeFLOW = new SafeFLOW()
 let liveSafeFLOW = {}
+let setFlow = false
 let libraryData = {}
 // https options for crypto
 const options = {
@@ -54,8 +55,9 @@ const wsServer = new WebSocketServer({ server })
 
 // listenr for data back from ECS
 function peerListeners (ws) {
-  console.log('batch of safeFlowlisterners')
+  // console.log('batch of safeFlowlisterners')
   liveSafeFLOW = new SafeFLOW()
+  setFlow = true
   function resultsCallback (entity, err, data) {
     let resultMatch = {}
     if (data !== null) {
@@ -107,8 +109,14 @@ function peerListeners (ws) {
 // WebSocket server
 wsServer.on('connection', function ws(ws) {
   console.log('peer connected websocket')
+  // console.log(wsServer.clients)
+  // wsServer.clients.forEach(element => console.log(Object.keys(element)))
+  console.log(wsServer.clients.size)
   // call back from results etc needing to get back to safeFLOW-ecs
+  // check if function is live?
+  if (setFlow === false) {
     peerListeners(ws)
+  }
 
   ws.on('message', async msg => {
     function callbackKey (data) {
@@ -298,6 +306,7 @@ wsServer.on('connection', function ws(ws) {
             console.log('close manual')
             // process.exit(0)
             liveSafeFLOW.emptyListeners(o)
+            setFlow = false
           })
         } else if (o.action === 'networkexperiment') {
           // send summary info that HOP has received NXP bundle
@@ -345,8 +354,6 @@ wsServer.on('connection', function ws(ws) {
         } else if (o.reftype.trim() === 'privatelibrary') {
           peerStoreLive.peerGETRefContracts('all', callbackPeer)
         } else if (o.reftype.trim() === 'removepeer') {
-          console.log('remove peer ref cotract')
-          console.log(o.data)
           peerStoreLive.peerREMOVERefContracts(o.data, callbackPeerDelete)
         } else if (o.reftype.trim() === 'datatype') {
           // query peer hypertrie for datatypes
@@ -564,7 +571,8 @@ wsServer.on('connection', function ws(ws) {
   })
   ws.on('close', ws => {
     console.log('close ws')
-    liveSafeFLOW.emptyListeners('refresh')
+    console.log(wsServer.clients.size)
+    // liveSafeFLOW.emptyListeners('refresh')
     // process.exit(0)
     // tell safeflow to empty listeners
     // console.log(o.data)
