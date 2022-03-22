@@ -111,10 +111,11 @@ wsServer.on('connection', function ws(ws) {
   console.log('peer connected websocket')
   // console.log(wsServer.clients)
   // wsServer.clients.forEach(element => console.log(Object.keys(element)))
-  console.log(wsServer.clients.size)
+  // console.log(wsServer.clients.size)
   // call back from results etc needing to get back to safeFLOW-ecs
   // check if function is live?
-  if (setFlow === false) {
+  if (setFlow === false && wsServer.clients.size === 1) {
+    console.log('activate listeners')
     peerListeners(ws)
   }
 
@@ -239,6 +240,7 @@ wsServer.on('connection', function ws(ws) {
         ws.send(JSON.stringify(authFailStatus)) */
       }
     }
+    console.log(jwtStatus)
     if (jwtStatus === true) {
       if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
         if (o.action === 'question') {
@@ -570,8 +572,11 @@ wsServer.on('connection', function ws(ws) {
     }
   })
   ws.on('close', ws => {
-    console.log('close ws')
-    console.log(wsServer.clients.size)
+    // console.log('close ws')
+    // console.log(wsServer.clients.size)
+    if (setFlow === true && wsServer.clients.size === 0) {
+      setFlow = false
+    }
     // liveSafeFLOW.emptyListeners('refresh')
     // process.exit(0)
     // tell safeflow to empty listeners
