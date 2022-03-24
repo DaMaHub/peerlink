@@ -172,7 +172,7 @@ wsServer.on('connection', function ws(ws) {
       libraryData.data = data
       libraryData.type = 'peerprivatedelete'
     }
-    function callbackPeer (err, data) {
+    function callbackPeerLib (err, data) {
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
       libraryData.type = 'peerprivate'
@@ -354,7 +354,7 @@ wsServer.on('connection', function ws(ws) {
         } else if (o.reftype.trim() === 'publiclibrary') {
           peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
         } else if (o.reftype.trim() === 'privatelibrary') {
-          peerStoreLive.peerGETRefContracts('all', callbackPeer)
+          peerStoreLive.peerGETRefContracts('all', callbackPeerLib)
         } else if (o.reftype.trim() === 'removepeer') {
           peerStoreLive.peerREMOVERefContracts(o.data, callbackPeerDelete)
         } else if (o.reftype.trim() === 'datatype') {
