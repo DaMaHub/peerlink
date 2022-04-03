@@ -104,7 +104,6 @@ function peerListeners (ws) {
   })
 
   liveSafeFLOW.on('checkPeerResults', async (data) => {
-    console.time(data.resultuuid)
     await peerStoreLive.peerStoreCheckResults(data, resultsCallback)
   })
 
@@ -166,6 +165,7 @@ wsServer.on('connection', function ws(ws) {
       libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
       ws.send(JSON.stringify(libraryData))
     }
+
     function callbackLifeboard (err, data) {
       // pass to sort data into ref contract types
       let libraryData = {}

@@ -364,7 +364,6 @@ PeerStoreWorker.prototype.peerStoreCheckResults = async function (dataPrint, cal
   // console.log('peer store query')
 
   this.datastoreResults.get(dataPrint.resultuuid, function (err, node) {
-    console.timeEnd(dataPrint.resultuuid)
     callback(dataPrint, err, node)
   })
   return true
@@ -382,14 +381,10 @@ PeerStoreWorker.prototype.queryLimiter = function (callback, index, limit, count
 
   if (index < count){
     setTimeout(()=>{
-      console.log(this.awaitQuery[index].resultuuid)
-      console.time(this.awaitQuery[index].resultuuid)
       this.datastoreResults.get(this.awaitQuery[index].resultuuid, function (err, node) {
         callback(this.awaitQuery[index].resultuuid, err, node)
       })
       index ++
-      console.log('indexpsot')
-      console.log(index)
       // remove element from array list?
       this.queryLimiter(callback, index, limit, count)
     }, limit, index)
