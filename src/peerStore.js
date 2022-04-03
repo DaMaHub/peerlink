@@ -26,6 +26,10 @@ var PeerStoreWorker = function (path) {
   this.datastoreKBL = {}
   this.dataswarm = new hyperswarm()
   this.listdata = []
+  this.awaitQuery = []
+  this.queryCallback = null
+  this.queryCallbackSet = false
+  // this.listRatequery()
 }
 
 /**
@@ -343,16 +347,55 @@ PeerStoreWorker.prototype.getRefContract = function (getType, refcont, callback)
 }
 
 /**
+* keep checking if any results to rate limit
+* @method listRatequery
+*
+*/
+PeerStoreWorker.prototype.listRatequery = function () {
+  console.log('list start rate')
+}
+
+/**
 * lookup specific result UUID
 * @method peerStoreCheckResults
 *
 */
-PeerStoreWorker.prototype.peerStoreCheckResults = function (dataPrint, callback) {
+PeerStoreWorker.prototype.peerStoreCheckResults = async function (dataPrint, callback) {
+  // console.log('peer store query')
+
   this.datastoreResults.get(dataPrint.resultuuid, function (err, node) {
+    console.timeEnd(dataPrint.resultuuid)
     callback(dataPrint, err, node)
   })
-  // this.datastoreResults.list( { ifAvailable: true }, callback)
   return true
+}
+
+/**
+* rate limit the query speed to personal datastore
+* @method queryLimiter
+*
+*/
+PeerStoreWorker.prototype.queryLimiter = function (callback, index, limit, count) {
+  function printEnd() {
+    console.log('end')
+  }
+
+  if (index < count){
+    setTimeout(()=>{
+      console.log(this.awaitQuery[index].resultuuid)
+      console.time(this.awaitQuery[index].resultuuid)
+      this.datastoreResults.get(this.awaitQuery[index].resultuuid, function (err, node) {
+        callback(this.awaitQuery[index].resultuuid, err, node)
+      })
+      index ++
+      console.log('indexpsot')
+      console.log(index)
+      // remove element from array list?
+      this.queryLimiter(callback, index, limit, count)
+    }, limit, index)
+  } else {
+    printEnd()
+  }
 }
 
 /**

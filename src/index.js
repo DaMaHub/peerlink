@@ -4,6 +4,7 @@ import { createServer } from 'https'
 import fs from 'fs'
 import crypto from 'crypto'
 import { WebSocketServer } from 'ws'
+import throttledQueue from 'throttled-queue'
 import CaleAi from 'cale-holism'
 import LibComposer from 'librarycomposer'
 import SafeFLOW from 'node-safeflow'
@@ -27,6 +28,7 @@ let kbidStoreLive // not in use
 let liveSafeFLOW = {}
 let setFlow = false
 let libraryData = {}
+let rateQueue = []
 // https options for crypto
 const options = {
   key: fs.readFileSync('src/key.pem'),
@@ -58,6 +60,7 @@ function peerListeners (ws) {
   // console.log('batch of safeFlowlisterners')
   liveSafeFLOW = new SafeFLOW()
   setFlow = true
+  // callbacks for datastores
   function resultsCallback (entity, err, data) {
     let resultMatch = {}
     if (data !== null) {
@@ -99,9 +102,12 @@ function peerListeners (ws) {
   liveSafeFLOW.on('storePeerResults', (data) => {
     const savedFeedback = peerStoreLive.peerStoreResults(data)
   })
-  liveSafeFLOW.on('checkPeerResults', (data) => {
-    const matchResult = peerStoreLive.peerStoreCheckResults(data, resultsCallback)
+
+  liveSafeFLOW.on('checkPeerResults', async (data) => {
+    console.time(data.resultuuid)
+    await peerStoreLive.peerStoreCheckResults(data, resultsCallback)
   })
+
   liveSafeFLOW.on('kbledgerEntry', (data) => {
     const savedFeedback = peerStoreLive.peerKBLentry(data)
   })
@@ -114,6 +120,8 @@ wsServer.on('connection', function ws(ws) {
   // console.log(wsServer.clients.size)
   // call back from results etc needing to get back to safeFLOW-ecs
   // check if function is live?
+  console.log('csize')
+  console.log(wsServer.clients.size)
   if (setFlow === false && wsServer.clients.size === 1) {
     console.log('activate listeners')
     peerListeners(ws)
