@@ -15,7 +15,7 @@ import os from 'os'
 import dotenv from 'dotenv'
 dotenv.config()
 
-const localpath = '/peerlink'
+const localpath = '/peerstore'
 let jwtList = []
 const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
