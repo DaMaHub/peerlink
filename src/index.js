@@ -392,7 +392,7 @@ wsServer.on('connection', function ws(ws) {
             peerStoreLive.libraryStoreRefContract(o)
           }
         } else if (o.reftype.trim() === 'packaging') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie for
           if (o.action === 'GET') {
             // peerStoreLive.peerGETRefContracts('packaging', callback)
           } else {
@@ -401,7 +401,7 @@ wsServer.on('connection', function ws(ws) {
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'visualise') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie for
           if (o.action === 'GET') {
             // peerStoreLive.peerGETRefContracts('visualise', callback)
           } else {
@@ -410,7 +410,7 @@ wsServer.on('connection', function ws(ws) {
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'experiment') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie for
           if (o.action === 'GET') {
             // peerStoreLive.peerGETRefContracts('experiment', callback)
           } else {
@@ -493,7 +493,7 @@ wsServer.on('connection', function ws(ws) {
           const savedFeedback = peerStoreLive.libraryStoreRefContract(genesisRefContract)
           ws.send(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'kbid') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie for
           if (o.action === 'GET') {
             kbidStoreLive.peerGETkbids('kbid', callback)
           } else {
@@ -530,7 +530,7 @@ wsServer.on('connection', function ws(ws) {
           joinExpDisplay.options = experimentOptions
           ws.send(JSON.stringify(joinExpDisplay))
         } else if (o.reftype.trim() === 'module') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie
           if (o.action === 'GET') {
             peerStoreLive.peerGETRefContracts('module', callback)
           } else {
