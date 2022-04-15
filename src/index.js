@@ -4,6 +4,7 @@ import { createServer } from 'https'
 import fs from 'fs'
 import crypto from 'crypto'
 import { WebSocketServer } from 'ws'
+import uuid from 'uuid'
 import throttledQueue from 'throttled-queue'
 import CaleAi from 'cale-holism'
 import LibComposer from 'librarycomposer'
@@ -17,6 +18,7 @@ dotenv.config()
 
 const localpath = '/peerstore'
 let jwtList = []
+let pairSockTok = {}
 const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
 let peerStoreLive =  new DatastoreWorker(localpath) // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
@@ -112,21 +114,19 @@ function peerListeners (ws) {
   })
 }
 // WebSocket server
-wsServer.on('connection', function ws(ws) {
+wsServer.on('connection', function ws(ws, req) {
   console.log('peer connected websocket')
   // console.log(wsServer.clients)
   // wsServer.clients.forEach(element => console.log(Object.keys(element)))
   // console.log(wsServer.clients.size)
   // call back from results etc needing to get back to safeFLOW-ecs
   // check if function is live?
-  console.log('csize')
-  console.log(wsServer.clients.size)
-  if (setFlow === false && wsServer.clients.size === 1) {
-    console.log('activate listeners')
-    peerListeners(ws)
-  }
+  ws.id = uuid.v4()
 
   ws.on('message', async msg => {
+    // which socket id?
+    // console.log('messageIN')
+
     function callbackKey (data) {
       let pubkeyData = {}
       pubkeyData.type = 'publickey'
@@ -204,9 +204,10 @@ wsServer.on('connection', function ws(ws) {
         // secure connect to safeFLOW
         let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
         // OK with safeFLOW setup then bring peerDatastores to life
-        peerStoreLive.setupDatastores()
+        // peerStoreLive.setupDatastores()
         ws.send(JSON.stringify(authStatus))
       } else if (o.action === 'cloudauth') {
+        // console.log('auth1')
         // does the username and password on the allow list?
         let allowPeers = JSON.parse(process.env.PEER_LIST)
         let authPeer = false
@@ -215,11 +216,29 @@ wsServer.on('connection', function ws(ws) {
             authPeer = true
           }
         }
-        if (authPeer === true) {
+        // is the peer already connected and authorised?
+        // no peers connected and autherise
+        let getAuth = Object.keys(pairSockTok)
+        let numAuth = getAuth.length
+        // can only be one token auth at same time
+        if (jwtList.length > 0) {
+          authPeer = false
+        }
+        // is the peer already connected?
+        let alreadyConnect = pairSockTok[o.data.peer]
+        let peerAuthed = pairSockTok[ws.id]
+        if (authPeer === true && alreadyConnect === undefined) {
           // setup safeFLOW
+          if (setFlow === false && alreadyConnect === undefined) {
+            console.log('activate listeners')
+            peerListeners(ws)
+          }
           // form token  (need to upgrade proper JWT)
           let tokenString = crypto.randomBytes(64).toString('hex')
           jwtList.push(tokenString)
+          // create socketid, token pair
+          pairSockTok[ws.id] = tokenString
+          pairSockTok[o.data.peer] = tokenString
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
           // send back JWT
           authStatus.jwt = tokenString
@@ -248,7 +267,7 @@ wsServer.on('connection', function ws(ws) {
         ws.send(JSON.stringify(authFailStatus)) */
       }
     }
-    console.log(jwtStatus)
+
     if (jwtStatus === true) {
       if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
         if (o.action === 'question') {
@@ -271,9 +290,10 @@ wsServer.on('connection', function ws(ws) {
           // secure connect to safeFLOW
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
           // OK with safeFLOW setup then bring peerDatastores to life
-          peerStoreLive.setupDatastores()
+          // peerStoreLive.setupDatastores()
           ws.send(JSON.stringify(authStatus))
         } else if (o.action === 'cloudauth') {
+          console.log('auth2')
           // does the username and password on the allow list?
           // form token  (need to upgrade proper JWT)
           let tokenString = crypto.randomBytes(64).toString('hex')
@@ -304,18 +324,21 @@ wsServer.on('connection', function ws(ws) {
             // check the public network library
             // peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
         } else if (o.action === 'disconnect') {
-          console.log('safelow ws exit')
+          console.log('safelow ws message exit')
           // in cloud mode cannot close whole app
           // remove JWT from list
           let index = jwtList.indexOf(o.jwt)
           jwtList.splice(index, 1)
+          pairSockTok = {}
           // process.exit(0)
-          // tell safeflow to empty listeners
-          liveSafeFLOW.emptyListeners(o)
+          liveSafeFLOW = {}
+          setFlow = false
           ws.on('close', ws => {
             console.log('close manual')
             // process.exit(0)
-            liveSafeFLOW.emptyListeners(o)
+            jwtList = []
+            pairSockTok = {}
+            liveSafeFLOW = {}
             setFlow = false
           })
         } else if (o.action === 'networkexperiment') {
@@ -580,16 +603,12 @@ wsServer.on('connection', function ws(ws) {
     }
   })
   ws.on('close', ws => {
-    // console.log('close ws')
-    // console.log(wsServer.clients.size)
-    if (setFlow === true && wsServer.clients.size === 0) {
-      setFlow = false
-    }
-    // liveSafeFLOW.emptyListeners('refresh')
+    console.log('close ws direct')
+    jwtList = []
+    pairSockTok = {}
+    liveSafeFLOW = {}
+    setFlow = false
     // process.exit(0)
-    // tell safeflow to empty listeners
-    // console.log(o.data)
-    // liveSafeFLOW.emptyListeners(o.data)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')

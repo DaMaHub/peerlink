@@ -185,6 +185,7 @@ FileParser.prototype.extractJSONkeys = function (o) {
 *
 */
 FileParser.prototype.extractCSVheaders = function (o, lineData) {
+  console.log(lineData)
   let delimiter = ''
   if (o.data.info.delimiter === 'tab') {
     delimiter = "\t"
