@@ -218,7 +218,7 @@ PeerStoreWorker.prototype.publicLibraryReplicate = function () {
   console.log('publiclibrary open for replication')
   // hardwired to public network library for now
   const localthis = this
-  let liveSwarm = this.dataswarm
+  let liveSwarm = new hyperswarm()
   let pubkey = ''
   this.datastoreNL.ready(() => {
     pubkey = this.datastoreNL.key.toString('hex')
@@ -244,7 +244,7 @@ PeerStoreWorker.prototype.publicLibraryReplicate = function () {
 PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
   // replicate
   const localthis = this
-  let liveSwarm = this.dataswarm // new hyperswarm()
+  let liveSwarm = new hyperswarm()
   var connectCount = 0
   let rpeer1Key = Buffer.from(key, "hex")
   // has the peers key and datastore been setup already?
