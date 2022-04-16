@@ -82,6 +82,9 @@ PeerStoreWorker.prototype.activateDatastores = function () {
   this.datastoreResults = hypertrie(os.homedir() + this.storepath + '/resultspeer.db', {valueEncoding: 'json'})
   // knowledge bundle ledger
   this.datastoreKBL = hypertrie(os.homedir() + this.storepath + '/kblpeer.db', {valueEncoding: 'json'})
+
+  // open public library for replication
+  this.publicLibraryReplicate()
 }
 
 /**
@@ -182,12 +185,12 @@ PeerStoreWorker.prototype.addPeer = function (newPeer, callback) {
 
 /**
 * return library public key and active swarm open
-* @method privatePeerLibrary
+* @method privatePeerLibraryReplicate
 *
 */
-PeerStoreWorker.prototype.privatePeerLibrary = function (pk, callback) {
+PeerStoreWorker.prototype.privatePeerLibraryReplicate = function (pk, callback) {
   const localthis = this
-  let liveSwarm = hyperswarm()
+  let liveSwarm = new hyperswarm()
   let pubkey = ''
   this.datastoreNL.ready(() => {
     pubkey = this.datastorePeerlibrary.key.toString('hex')
@@ -208,14 +211,14 @@ PeerStoreWorker.prototype.privatePeerLibrary = function (pk, callback) {
 
 /**
 * open library datastore for replication from peers with its public key
-* @method openLibrary
+* @method publicLibraryReplicate
 *
 */
-PeerStoreWorker.prototype.openLibrary = function (pk, callback) {
-  // what datastore to open?
+PeerStoreWorker.prototype.publicLibraryReplicate = function () {
+  console.log('publiclibrary open for replication')
   // hardwired to public network library for now
   const localthis = this
-  let liveSwarm = hyperswarm()
+  let liveSwarm = this.dataswarm
   let pubkey = ''
   this.datastoreNL.ready(() => {
     pubkey = this.datastoreNL.key.toString('hex')
@@ -227,22 +230,21 @@ PeerStoreWorker.prototype.openLibrary = function (pk, callback) {
     // make NetworkLibrary datastore open for another peer to replicate
     liveSwarm.on('connection', function (socket, details) {
       // `details` is a simple object that describes the peer we connected to
-      console.log('swarm connect peer1')
+      console.log('swarm connect peer primary')
       pump(socket, localthis.datastoreNL.replicate(true, { live: true }), socket)
     })
-    callback(pubkey)
   })
 }
 
 /**
-* replicate the publick library ref contract datastore
-* @method replicatePublicLibrary
+* receive another publick library ref contract datastore
+* @method publicLibraryReceive
 *
 */
-PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
+PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
   // replicate
   const localthis = this
-  let liveSwarm = hyperswarm()
+  let liveSwarm = this.dataswarm // new hyperswarm()
   var connectCount = 0
   let rpeer1Key = Buffer.from(key, "hex")
   // has the peers key and datastore been setup already?
@@ -254,11 +256,11 @@ PeerStoreWorker.prototype.replicatePublicLibrary = function (key, callback) {
     })
     this.datastoreNL2.ready(() => {
       liveSwarm.on('connection', function (socket, details) {
-        // console.log('swarm connect peer')
+        console.log('RECEIVE swarm connect peer')
         // connectCount++
         // console.log(connectCount)
-        // pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
-        // console.log('after replication')
+        pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
+        console.log('after replication')
         // localthis.datastoreNL2.list( { ifAvailable: true }, callback)
         // keep checking for new updates to network library (need to filter when bigger network)
         /* function updatePublicLibrary() {

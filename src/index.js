@@ -115,7 +115,7 @@ function peerListeners (ws) {
 }
 // WebSocket server
 wsServer.on('connection', function ws(ws, req) {
-  console.log('peer connected websocket')
+  // console.log('peer connected websocket')
   // console.log(wsServer.clients)
   // wsServer.clients.forEach(element => console.log(Object.keys(element)))
   // console.log(wsServer.clients.size)
@@ -381,7 +381,7 @@ wsServer.on('connection', function ws(ws, req) {
           peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
-          const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
+          const replicateStore = peerStoreLive.publicLibraryReceive(o.publickey, callbacklibrary)
         } else if (o.reftype.trim() === 'publiclibrary') {
           peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
         } else if (o.reftype.trim() === 'privatelibrary') {
