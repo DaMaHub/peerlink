@@ -269,6 +269,10 @@ PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
         // console.log(connectCount)
         pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
         console.log('after replication')
+        let replicateMessage = {}
+        replicateMessage.store = 'publiclibrary'
+        replicateMessage.replicate = true
+        callback(replicateMessage)
         // localthis.datastoreNL2.list( { ifAvailable: true }, callback)
         // keep checking for new updates to network library (need to filter when bigger network)
         /* function updatePublicLibrary() {
@@ -298,6 +302,16 @@ PeerStoreWorker.prototype.localNetworkLibrarySync = function (nlr, nw, opts) {
 */
 PeerStoreWorker.prototype.libraryGETRefContracts = function (getType, callback) {
   let databackP = this.datastoreNL.list( { ifAvailable: true }, callback)
+  return true
+}
+
+/**
+* get the network library reference contracts - all for now
+* @method libraryGETRefContracts
+*
+*/
+PeerStoreWorker.prototype.libraryGETReplicateLibrary = function (getType, callback) {
+  this.datastoreNL2.list( { ifAvailable: true }, callback)
   return true
 }
 

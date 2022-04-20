@@ -166,6 +166,29 @@ wsServer.on('connection', function ws(ws, req) {
       ws.send(JSON.stringify(libraryData))
     }
 
+    function callbackReplicatelibrary (err, data) {
+      // pass to sort data into ref contract types
+      libraryData.data = 'contracts'
+      libraryData.type = 'replicatedata-publiclibrary'
+      const segmentedRefContracts = liveLibrary.liveRefcontUtility.refcontractSperate(data)
+      libraryData.referenceContracts = segmentedRefContracts
+      // need to split for genesis and peer joined NXPs
+      const nxpSplit = liveLibrary.liveRefcontUtility.experimentSplit(segmentedRefContracts.experiment)
+      libraryData.splitExperiments = nxpSplit
+      // look up modules for this experiments
+      libraryData.networkExpModules = liveLibrary.liveRefcontUtility.expMatchModuleGenesis(libraryData.referenceContracts.module, nxpSplit.genesis)
+      libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
+      ws.send(JSON.stringify(libraryData))
+    }
+
+    function callbackReplicatereceive (data) {
+      console.log('repliate feedvack peerlink')
+      let peerRdata = {}
+      peerRdata.type = 'replicate-publiclibrary'
+      peerRdata.data = data
+      ws.send(JSON.stringify(peerRdata))
+    }
+
     function callbackLifeboard (err, data) {
       // pass to sort data into ref contract types
       let libraryData = {}
@@ -381,7 +404,10 @@ wsServer.on('connection', function ws(ws, req) {
           peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
-          const replicateStore = peerStoreLive.publicLibraryReceive(o.publickey, callbacklibrary)
+          const replicateStore = peerStoreLive.publicLibraryReceive(o.publickey, callbackReplicatereceive)
+        } else if (o.reftype.trim() === 'view-replicatelibrary') {
+          // read the replicate library
+          peerStoreLive.libraryGETReplicateLibrary(o.publickey, callbackReplicatelibrary)
         } else if (o.reftype.trim() === 'publiclibrary') {
           peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
         } else if (o.reftype.trim() === 'privatelibrary') {
