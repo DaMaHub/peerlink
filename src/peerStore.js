@@ -290,10 +290,19 @@ PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
 * @method publicLibraryAddentry
 *
 */
-PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp) {
+PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp, callback) {
   console.log('select')
   console.log(nxp)
-  this.datastoreNL2.get(nxp.nxpID, console.log)
+  const localthis = this
+  // this.datastoreNL2.get(nxp.nxpID, console.log)
+  this.datastoreNL2.get(nxp.nxpID, function (err, entry) {
+    console.log('success')
+    console.log(entry)
+    localthis.datastoreNL.put(entry, (err, data) => {
+      callback(data)
+    })
+  })
+
 }
 
 /**

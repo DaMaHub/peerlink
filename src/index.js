@@ -166,6 +166,11 @@ wsServer.on('connection', function ws(ws, req) {
       ws.send(JSON.stringify(libraryData))
     }
 
+    function callbackPlibraryAdd (err, data) {
+      console.log('add to public librrary from peer')
+      console.log(data)
+    }
+s
     function callbackReplicatelibrary (err, data) {
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
@@ -404,7 +409,7 @@ wsServer.on('connection', function ws(ws, req) {
           peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
         } else if (o.reftype.trim() === 'addpubliclibraryentry') {
           // take the ID of nxp selected to added to peers own public library
-          peerStoreLive.publicLibraryAddentry(o.data)
+          peerStoreLive.publicLibraryAddentry(o.data, callbackPlibraryAdd)
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
           const replicateStore = peerStoreLive.publicLibraryReceive(o.publickey, callbackReplicatereceive)
