@@ -298,7 +298,8 @@ PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp, callback) {
   this.datastoreNL2.get(nxp.nxpID, function (err, entry) {
     console.log('success')
     console.log(entry)
-    localthis.datastoreNL.put(entry.key, entry.value, (err, data) => {
+    let dataEntry = JSON.parse(entry.value)
+    localthis.datastoreNL.put(entry.key, dataEntry, (err, data) => {
       callback(data)
     })
   })
