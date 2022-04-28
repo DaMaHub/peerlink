@@ -170,7 +170,7 @@ wsServer.on('connection', function ws(ws, req) {
       console.log('add to public librrary from peer')
       console.log(data)
     }
-s
+
     function callbackReplicatelibrary (err, data) {
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
