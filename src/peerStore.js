@@ -286,6 +286,17 @@ PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
 }
 
 /**
+* take nxp id from temporary pubic network library and add to peers public library
+* @method publicLibraryAddentry
+*
+*/
+PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp) {
+  console.log('select')
+  console.log(nxp)
+  this.datastoreNL2.get(nxp.nxpID, console.log)
+}
+
+/**
 * replicate network library from peer with own local public library
 * @method localNetworkLibrarySync
 *

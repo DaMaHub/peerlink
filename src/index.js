@@ -402,6 +402,9 @@ wsServer.on('connection', function ws(ws, req) {
           peerStoreLive.addPeer(o.data, callbackPeerNetwork)
         } else if (o.reftype.trim() === 'warm-peers') {
           peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
+        } else if (o.reftype.trim() === 'addpubliclibraryentry') {
+          // take the ID of nxp selected to added to peers own public library
+          peerStoreLive.publicLibraryAddentry(o.data)
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
           const replicateStore = peerStoreLive.publicLibraryReceive(o.publickey, callbackReplicatereceive)
