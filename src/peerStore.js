@@ -299,7 +299,19 @@ PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp, callback) {
     console.log('success')
     console.log(entry)
     let dataEntry = JSON.parse(entry.value)
-    localthis.datastoreNL.put(entry.key, dataEntry, (err, data) => {
+    console.log(dataEntry)
+    // need to look up individual module contracts and copy them across
+    for (let mod of dataEntry.value.modules) {
+      // more hypertie get queries and saving
+      this.datastoreNL2.get(mod.key, function (err, entry) {
+        console.log('success2222')
+        console.log(entry)
+        localthis.datastoreNL.put(entry.key, dataEntry.value, (err, data) => {
+          callback(data)
+        })
+      })
+    }
+    localthis.datastoreNL.put(entry.key, dataEntry.value, (err, data) => {
       callback(data)
     })
   })
