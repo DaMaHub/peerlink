@@ -291,30 +291,20 @@ PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
 *
 */
 PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp, callback) {
-  console.log('select')
-  console.log(nxp)
   const localthis = this
   // this.datastoreNL2.get(nxp.nxpID, console.log)
   this.datastoreNL2.get(nxp.nxpID, function (err, entry) {
-    console.log('success')
-    console.log(entry)
     // need to look up individual module contracts and copy them across
     for (let mod of entry.value.modules) {
       // more hypertie get queries and saving
       localthis.datastoreNL2.get(mod, function (err, entry) {
-        console.log('success2222')
-        console.log(entry)
         if (entry.value.info.moduleinfo.name === 'visualise') {
           // what are the datatypes?
           let datatypeList = []
           datatypeList.push(entry.value.info.option.settings.xaxis)
           datatypeList = [...datatypeList, ...entry.value.info.option.settings.yaxis]
-          console.log('datatypelist')
-          console.log(datatypeList)
           for (let dtref of datatypeList) {
             localthis.datastoreNL2.get(dtref, function (err, entry) {
-              console.log('detail of vis data types')
-              console.log(entry)
               localthis.datastoreNL.put(entry.key, entry.value, (err, data) => {
                 callback(data)
               })
@@ -324,8 +314,6 @@ PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp, callback) {
         // need to get the underlying ref contract for module type e.g data, compute, vis
         if (entry.value.info.refcont) {
           localthis.datastoreNL2.get(entry.value.info.refcont, function (err, entry) {
-            console.log('detail of module')
-            console.log(entry)
             localthis.datastoreNL.put(entry.key, entry.value, (err, data) => {
               callback(data)
             })

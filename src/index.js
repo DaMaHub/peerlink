@@ -167,8 +167,10 @@ wsServer.on('connection', function ws(ws, req) {
     }
 
     function callbackPlibraryAdd (err, data) {
-      console.log('add to public librrary from peer')
-      console.log(data)
+      let libraryData = {}
+      libraryData.data = data
+      libraryData.type = 'publiclibraryaddcomplete'
+      ws.send(JSON.stringify(libraryData))
     }
 
     function callbackReplicatelibrary (err, data) {
