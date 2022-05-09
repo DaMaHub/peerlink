@@ -331,6 +331,23 @@ PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp, callback) {
 }
 
 /**
+* remove the temp network library of peer synced
+* @method publicLibraryRemoveTempNL
+*
+*/
+PeerStoreWorker.prototype.publicLibraryRemoveTempNL = function () {
+  this.datastoreNL2 = {}
+  // remove the hypertrie db
+  let tempLibraryfolder = os.homedir() + this.storepath + '/librarynetwork2.db'
+  fs.rmdir(tempLibraryfolder, { recursive: true }, (err) => {
+      if (err) {
+          throw err
+      }
+      console.log(`${tempLibraryfolder} is deleted!`);
+  })
+}
+
+/**
 * replicate network library from peer with own local public library
 * @method localNetworkLibrarySync
 *
@@ -356,8 +373,13 @@ PeerStoreWorker.prototype.libraryGETRefContracts = function (getType, callback) 
 *
 */
 PeerStoreWorker.prototype.libraryGETReplicateLibrary = function (getType, callback) {
-  this.datastoreNL2.list( { ifAvailable: true }, callback)
-  return true
+  console.log(this.datastoreNL2)
+  if (this.datastoreNL2) {
+    this.datastoreNL2.list( { ifAvailable: true }, callback)
+    return true
+  } else {
+    return false
+  }
 }
 
 /**

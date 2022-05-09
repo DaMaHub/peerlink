@@ -412,6 +412,9 @@ wsServer.on('connection', function ws(ws, req) {
         } else if (o.reftype.trim() === 'addpubliclibraryentry') {
           // take the ID of nxp selected to added to peers own public library
           peerStoreLive.publicLibraryAddentry(o.data, callbackPlibraryAdd)
+        } else if (o.reftype.trim() === 'removetemppubliclibrary') {
+          // remove temp peers friends library
+          peerStoreLive.publicLibraryRemoveTempNL(o.data, 'temp')
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
           const replicateStore = peerStoreLive.publicLibraryReceive(o.publickey, callbackReplicatereceive)
