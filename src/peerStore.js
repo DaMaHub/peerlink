@@ -75,6 +75,8 @@ PeerStoreWorker.prototype.activateDatastores = function () {
   // peer warm cold connections
   this.datastoreLifeboards = hypertrie(os.homedir() + this.storepath + '/peerlifeboards.db', {valueEncoding: 'json'})
   // peer library of joined experiments
+  this.datastoreBentospaces = hypertrie(os.homedir() + this.storepath + '/peerbentospaces.db', {valueEncoding: 'json'})
+  // peer library of joined experiments
   this.datastorePeerlibrary = hypertrie(os.homedir() + this.storepath + '/peerlibrary.db', {valueEncoding: 'json'})
   // network library public
   this.datastoreNL = hypertrie(os.homedir() + this.storepath + '/librarynetwork.db', {valueEncoding: 'json'})
@@ -160,6 +162,30 @@ PeerStoreWorker.prototype.addLifeboard = function (newLifeboard, callback) {
 }
 
 /**
+* return list bentospaces info
+* @method listBentospaces
+*
+*/
+PeerStoreWorker.prototype.listBentospaces = function (callback) {
+  this.datastoreBentospaces.list( { ifAvailable: true }, (err, data) => {
+    callback(data)
+  })
+}
+
+/**
+* add new or update bentospaces info
+* @method addBentospaces
+*
+*/
+PeerStoreWorker.prototype.addBentospaces = function (newBentoSpace, callback) {
+  let key = 'startbentospaces'
+  this.datastoreBentospaces.put(key, newBentoSpace, function (err, data) {
+    callback(data)
+  })
+}
+
+
+/**
 * return list of warm peers
 * @method listWarmPeers
 *
@@ -236,9 +262,9 @@ PeerStoreWorker.prototype.publicLibraryReplicate = function () {
     // make NetworkLibrary datastore open for another peer to replicate
     liveSwarm.on('connection', function (socket, details) {
       connectCount++
-      console.log(connectCount)
+      // console.log(connectCount)
       // `details` is a simple object that describes the peer we connected to
-      console.log('swarm connect peer primary')
+      // console.log('swarm connect peer primary')
       pump(socket, localthis.datastoreNL.replicate(true, { live: true }), socket)
     })
   })

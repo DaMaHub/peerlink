@@ -204,6 +204,24 @@ wsServer.on('connection', function ws(ws, req) {
       libraryData.lifeboard = data
       ws.send(JSON.stringify(libraryData))
     }
+
+    function callbackBentospace (err, data) {
+      // pass to sort data into ref contract types
+      let blibraryData = {}
+      blibraryData.type = 'bentospaces'
+      blibraryData.data = data
+      ws.send(JSON.stringify(blibraryData))
+    }
+
+    function callbackListBentospace (data) {
+      // pass to sort data into ref contract types
+      let blibraryData = {}
+      blibraryData.type = 'bentospaces-list'
+      blibraryData.data = data
+      // blibraryData.bentospaces = data
+      ws.send(JSON.stringify(blibraryData))
+    }
+
     function callbackPeerDelete(err, data) {
       // pass to sort data into ref contract types
       let libraryData = {}
@@ -383,6 +401,8 @@ wsServer.on('connection', function ws(ws, req) {
           let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
         }
       } else if (o.type.trim() === 'library' ) {
+        // console.log('biary')
+        // console.log(o)
         // library routing
         if (o.reftype.trim() === 'convert-csv-json') {
           // save protocol original file save and JSON for HOP
@@ -634,6 +654,16 @@ wsServer.on('connection', function ws(ws, req) {
         } else {
           console.log('network library no match')
         }
+      } else if (o.reftype.trim() === 'bentospace') {
+        console.log('bento space  what sub action?')
+        console.log(o)
+          if (o.action.trim() === 'save-position') {
+            peerStoreLive.addBentospaces(o.data, callbackBentospace)
+          } else if (o.action.trim() === 'list-position') {
+            peerStoreLive.listBentospaces(callbackListBentospace)
+          } else {
+            console.log('no action bentospace')
+          }
       } else {
         console.log('nothing matched tell of that')
       }
