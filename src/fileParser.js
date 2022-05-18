@@ -1,4 +1,6 @@
 'use strict'
+import atob from 'atob'
+
 /**
 *  FileParser
 *
@@ -16,9 +18,11 @@ import util from 'util'
 import events from 'events'
 import axios from 'axios'
 import csv from 'csv-parser'
+import crypto from 'crypto'
 
-var FileParser = function () {
+var FileParser = function (path) {
   events.EventEmitter.call(this)
+  this.storepath = path
 }
 
 /**
@@ -28,12 +32,52 @@ var FileParser = function () {
 util.inherits(FileParser, events.EventEmitter)
 
 /**
+* local json file extract header for auto complete
+* @method
+*
+*/
+FileParser.prototype.localJSONfile = async function (o, ws) {
+  let headerSet = this.extractJSONkeys(o)
+  // data back to peer
+  let fileFeedback = {}
+  fileFeedback.success = true
+  fileFeedback.path = this.storepath + '/json/' + o.data.name + '.json'
+  fileFeedback.columns = headerSet
+  let storeFeedback = {}
+  storeFeedback.type = 'file-save'
+  storeFeedback.action = 'library'
+  storeFeedback.data = fileFeedback
+  ws.send(JSON.stringify(storeFeedback))
+}
+
+
+/**
+* web json file for saving
+* @method webJSONfile
+*
+*/
+FileParser.prototype.webJSONfile = async function (o, ws) {
+  // then prepare file for HOP i.e. convert to json
+  const lines = JSON.parse(reader.result)
+  localthis.linesLimit = lines
+  // data back to peer
+  /* let fileFeedback = {}
+  fileFeedback.success = true
+  fileFeedback.path = this.storepath + '/json/' + fileName + '.json'
+  fileFeedback.columns = headerSet.splitwords
+  let storeFeedback = {}
+  storeFeedback.type = 'json-file-save'
+  storeFeedback.action = 'library'
+  storeFeedback.data = fileFeedback
+  ws.send(JSON.stringify(storeFeedback)) */
+}
+
+/**
 * local file parser save etc
 * @method localFileParse
 *
 */
 FileParser.prototype.localFileParse = async function (o, ws) {
-  console.log('local files')
   // then prepare file for HOP i.e. convert to json
   // file input management
   // extract out the headers name for columns
@@ -42,8 +86,8 @@ FileParser.prototype.localFileParse = async function (o, ws) {
   let newPathFile = this.saveOriginalProtocol(o)
   //  csv to JSON convertion and save into HOP
   // const praser = readStream(newPathcsv, headerSet, delimiter, dataline)
-  const praser = await this.readFileStream(newPathFile, headerSet)
-  this.convertJSON(o, ws, headerSet, praser)
+  const parser = await this.readFileStream(newPathFile, headerSet)
+  this.convertJSON(o, ws, headerSet, parser, 'local', null)
 }
 
 /**
@@ -52,8 +96,6 @@ FileParser.prototype.localFileParse = async function (o, ws) {
 *
 */
 FileParser.prototype.webFileParse = async function (o, ws) {
-  console.log('web files')
-  console.log(o)
   const localthis = this
   let dataWeb = await axios.get(o.data.websource)
     .catch(function (error) {
@@ -69,12 +111,14 @@ FileParser.prototype.webFileParse = async function (o, ws) {
       match = line
     }
   })
-  console.log(match.length)
+  // create new file name hash of source url
+  const hashURL = crypto.createHash('sha256').update(o.data.websource).digest('hex')
+  const fileNewName = hashURL + '.csv'
   // localthis.linesLimit = lines.slice(0, 30)
   let headerInfo = localthis.extractCSVheaders(o, match)
-  let newPathFile = localthis.saveOriginalProtocolWeb(o, dataSource)
+  let newPathFile = localthis.saveOriginalProtocolWeb(o, dataSource, fileNewName)
   const praser = await localthis.readFileStream(newPathFile, headerInfo)
-  this.convertJSON(o, ws, headerInfo, praser)
+  this.convertJSON(o, ws, headerInfo, praser, 'web', fileNewName)
 }
 
 /**
@@ -85,15 +129,54 @@ FileParser.prototype.webFileParse = async function (o, ws) {
 FileParser.prototype.extractCSVHeaderInfo = function (o) {
   let match = ''
   let lcounter = 0
-  const allFileContents = fs.readFileSync(o.data.path, 'utf-8')
-  allFileContents.split(/\r?\n/).forEach(line =>  {
-    lcounter++
-    if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
-      match = line
-    }
-  })
+  // if local peer setup then file path is available
+  if (o.data.web === 'weblocal') {
+    const dataURI = o.data.path
+    const dataCSV = atob(dataURI.split(',')[1]);
+    dataCSV.split(/\r?\n/).forEach(line =>  {
+      lcounter++
+      if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
+        match = line
+      }
+    })
+  } else {
+    // let filePathCSV = fs.existsSync(os.homedir() + this.storepath + '/csv/') + o.data.name
+    const allFileContents = fs.readFileSync(filePathCSV, 'utf-8')
+    allFileContents.split(/\r?\n/).forEach(line =>  {
+      lcounter++
+      if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
+        match = line
+      }
+    })
+  }
   let headerInfo = this.extractCSVheaders(o, match)
   return headerInfo
+}
+
+/**
+* read JSON row and extact keys
+* @method extractJSONkeys
+*
+*/
+FileParser.prototype.extractJSONkeys = function (o) {
+  let jsonKeys = []
+  // if local peer setup then file path is available
+  if (o.data.web === 'weblocal') {
+    const dataURI = o.data.path
+    const dataCSV = atob(dataURI.split(',')[1])
+    const toJSON = JSON.parse(dataCSV)
+    jsonKeys = Object.keys(toJSON[0])
+  } else {
+    // let filePathCSV = fs.existsSync(os.homedir() + this.storepath + '/csv/') + o.data.name
+    const allFileContents = fs.readFileSync(filePathCSV, 'utf-8')
+    allFileContents.split(/\r?\n/).forEach(line =>  {
+      lcounter++
+      if (lcounter === (parseInt(o.data.info.cnumber) +1 )) {
+        jsonKeys = line
+      }
+    })
+  }
+  return jsonKeys
 }
 
 /**
@@ -102,7 +185,6 @@ FileParser.prototype.extractCSVHeaderInfo = function (o) {
 *
 */
 FileParser.prototype.extractCSVheaders = function (o, lineData) {
-  console.log('ext csv')
   console.log(lineData)
   let delimiter = ''
   if (o.data.info.delimiter === 'tab') {
@@ -130,7 +212,6 @@ FileParser.prototype.extractCSVheaders = function (o, lineData) {
 *
 */
 FileParser.prototype.readFileStream = async function (fpath, headerSet) {
-  console.log(fpath)
   // function readStream (fpath, headerSet, delimiter, startno) {
   return new Promise((resolve, reject) => {
     const results = []
@@ -148,28 +229,32 @@ FileParser.prototype.readFileStream = async function (fpath, headerSet) {
 * @method convertJSON
 *
 */
-FileParser.prototype.convertJSON = function (o, ws, headerSet, results) {
-  //function jsonConvert (results) {
+FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, newFilename) {
+  const localthis = this
+  let fileName = ''
+  if (source !== 'web') {
+    fileName = o.data.name
+  } else {
+    fileName = newFilename
+  }
+  const datacolumn = o.data.info.datename
   const flowList = []
   for (const rs of results) {
-    // console.log(rs)
-    const dateFormat = new Date(rs.datetime)
+    const dateFormat = new Date(rs[datacolumn])
     const msDate = dateFormat.getTime()
-    rs.datetime = msDate / 1000
+    rs[datacolumn] = msDate / 1000
     flowList.push(rs)
   }
   const jsonFlow = JSON.stringify(flowList)
-  // console.log(jsonFlow)
-  fs.writeFile(os.homedir() + '/peerlink/json/' + o.data.name + '.json', jsonFlow, 'utf8', function (err) {
+  fs.writeFile(os.homedir() + localthis.storepath + '/json/' + fileName + '.json', jsonFlow, 'utf8', function (err) {
     if (err) {
       console.log('An error occured while writing JSON Object to File.')
       return console.log(err)
     }
-    console.log('JSON file has been saved.')
     // data back to peer
     let fileFeedback = {}
     fileFeedback.success = true
-    fileFeedback.path = '/peerlink/json/' + o.data.name + '.json'
+    fileFeedback.path = localthis.storepath + '/json/' + fileName + '.json'
     fileFeedback.columns = headerSet.splitwords
     let storeFeedback = {}
     storeFeedback.type = 'file-save'
@@ -186,28 +271,36 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results) {
 */
 FileParser.prototype.saveOriginalProtocol = function (o) {
   // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
-  let newPathcsv = os.homedir() + '/peerlink/csv/' + o.data.name
-  fs.rename(o.data.path, newPathcsv, function (err) {
-    if (err) throw err
-    console.log('File Renamed.')
-  })
+  let newPathcsv = os.homedir() + this.storepath + '/csv/' + o.data.name
+  if (o.data.web === 'weblocal') {
+    const dataURI = o.data.path
+    const dataCSV = atob(dataURI.split(',')[1])
+    fs.writeFile(newPathcsv, dataCSV, function (err, data) {
+      if (err) {
+        return console.log(err)
+      }
+    })
+  } else {
+    fs.rename(o.data.path, newPathcsv, function (err) {
+      if (err) throw err
+      console.log('File Renamed.')
+    })
+  }
   return newPathcsv
 }
 
 /**
 * keep copy of source entering network library from web
-* @method saveOriginalProtocol
+* @method saveOriginalProtocolWeb
 *
 */
-FileParser.prototype.saveOriginalProtocolWeb = function (o, data) {
+FileParser.prototype.saveOriginalProtocolWeb = function (o, data, fileNewName) {
   // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
-  let newPathcsv = os.homedir() + '/peerlink/csv/' + o.data.name
+  let newPathcsv = os.homedir() + this.storepath + '/csv/' + fileNewName
   fs.writeFile(newPathcsv, data, function (err, data) {
     if (err) {
       return console.log(err)
     }
-    console.log('data save source')
-    console.log(data)
   })
   return newPathcsv
 }

@@ -2,7 +2,10 @@
 import { createServer } from 'https'
 // import { createServer } from 'http'
 import fs from 'fs'
+import crypto from 'crypto'
 import { WebSocketServer } from 'ws'
+import uuid from 'uuid'
+import throttledQueue from 'throttled-queue'
 import CaleAi from 'cale-holism'
 import LibComposer from 'librarycomposer'
 import SafeFLOW from 'node-safeflow'
@@ -13,14 +16,21 @@ import os from 'os'
 import dotenv from 'dotenv'
 dotenv.config()
 
+const localpath = '/peerstore'
 let jwtList = []
+let pairSockTok = {}
 const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
-let peerStoreLive =  new DatastoreWorker() // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
-const liveParser = new FileParser()
+let peerStoreLive =  new DatastoreWorker(localpath) // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
+// OK with safeFLOW setup then bring peerDatastores to life
+peerStoreLive.setupDatastores()
+const liveParser = new FileParser(localpath)
 let kbidStoreLive // not in use
-const liveSafeFLOW = new SafeFLOW()
+// const liveSafeFLOW = new SafeFLOW()
+let liveSafeFLOW = {}
+let setFlow = false
 let libraryData = {}
+let rateQueue = []
 // https options for crypto
 const options = {
   key: fs.readFileSync('src/key.pem'),
@@ -42,16 +52,17 @@ server.on('error', function(e) {
 
 server.listen(9888, () => {
   console.log('listening on *:9888')
+  console.log(process.env.npm_package_version)
 })
 
 const wsServer = new WebSocketServer({ server })
 
-// WebSocket server
-wsServer.on('connection', function ws(ws) {
-// wsServer.on('request', request => {
-  // let ws = request.accept(null, request.origin)
-  console.log('peer connected websocket')
-  // call back from results etc needing to get back to safeFLOW-ecs
+// listenr for data back from ECS
+function peerListeners (ws) {
+  // console.log('batch of safeFlowlisterners')
+  liveSafeFLOW = new SafeFLOW()
+  setFlow = true
+  // callbacks for datastores
   function resultsCallback (entity, err, data) {
     let resultMatch = {}
     if (data !== null) {
@@ -69,6 +80,7 @@ wsServer.on('connection', function ws(ws) {
     data.type = 'newEntity'
     ws.send(JSON.stringify(data))
   })
+  let deCount = liveSafeFLOW.listenerCount('displayEntity')
   liveSafeFLOW.on('displayEntityRange', (data) => {
     data.type = 'newEntityRange'
     ws.send(JSON.stringify(data))
@@ -92,14 +104,29 @@ wsServer.on('connection', function ws(ws) {
   liveSafeFLOW.on('storePeerResults', (data) => {
     const savedFeedback = peerStoreLive.peerStoreResults(data)
   })
-  liveSafeFLOW.on('checkPeerResults', (data) => {
-    const matchResult = peerStoreLive.peerStoreCheckResults(data, resultsCallback)
+
+  liveSafeFLOW.on('checkPeerResults', async (data) => {
+    await peerStoreLive.peerStoreCheckResults(data, resultsCallback)
   })
+
   liveSafeFLOW.on('kbledgerEntry', (data) => {
     const savedFeedback = peerStoreLive.peerKBLentry(data)
   })
+}
+// WebSocket server
+wsServer.on('connection', function ws(ws, req) {
+  // console.log('peer connected websocket')
+  // console.log(wsServer.clients)
+  // wsServer.clients.forEach(element => console.log(Object.keys(element)))
+  // console.log(wsServer.clients.size)
+  // call back from results etc needing to get back to safeFLOW-ecs
+  // check if function is live?
+  ws.id = uuid.v4()
 
   ws.on('message', async msg => {
+    // which socket id?
+    // console.log('messageIN')
+
     function callbackKey (data) {
       let pubkeyData = {}
       pubkeyData.type = 'publickey'
@@ -138,6 +165,37 @@ wsServer.on('connection', function ws(ws) {
       libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
       ws.send(JSON.stringify(libraryData))
     }
+
+    function callbackPlibraryAdd (err, data) {
+      let libraryData = {}
+      libraryData.data = data
+      libraryData.type = 'publiclibraryaddcomplete'
+      ws.send(JSON.stringify(libraryData))
+    }
+
+    function callbackReplicatelibrary (err, data) {
+      // pass to sort data into ref contract types
+      libraryData.data = 'contracts'
+      libraryData.type = 'replicatedata-publiclibrary'
+      const segmentedRefContracts = liveLibrary.liveRefcontUtility.refcontractSperate(data)
+      libraryData.referenceContracts = segmentedRefContracts
+      // need to split for genesis and peer joined NXPs
+      const nxpSplit = liveLibrary.liveRefcontUtility.experimentSplit(segmentedRefContracts.experiment)
+      libraryData.splitExperiments = nxpSplit
+      // look up modules for this experiments
+      libraryData.networkExpModules = liveLibrary.liveRefcontUtility.expMatchModuleGenesis(libraryData.referenceContracts.module, nxpSplit.genesis)
+      libraryData.networkPeerExpModules = liveLibrary.liveRefcontUtility.expMatchModuleJoined(libraryData.referenceContracts.module, nxpSplit.joined)
+      ws.send(JSON.stringify(libraryData))
+    }
+
+    function callbackReplicatereceive (data) {
+      console.log('repliate feedvack peerlink')
+      let peerRdata = {}
+      peerRdata.type = 'replicate-publiclibrary'
+      peerRdata.data = data
+      ws.send(JSON.stringify(peerRdata))
+    }
+
     function callbackLifeboard (err, data) {
       // pass to sort data into ref contract types
       let libraryData = {}
@@ -146,7 +204,31 @@ wsServer.on('connection', function ws(ws) {
       libraryData.lifeboard = data
       ws.send(JSON.stringify(libraryData))
     }
-    function callbackPeer (err, data) {
+
+    function callbackBentospace (err, data) {
+      // pass to sort data into ref contract types
+      let blibraryData = {}
+      blibraryData.type = 'bentospaces'
+      blibraryData.data = data
+      ws.send(JSON.stringify(blibraryData))
+    }
+
+    function callbackListBentospace (data) {
+      // pass to sort data into ref contract types
+      let blibraryData = {}
+      blibraryData.type = 'bentospaces-list'
+      blibraryData.data = data
+      // blibraryData.bentospaces = data
+      ws.send(JSON.stringify(blibraryData))
+    }
+
+    function callbackPeerDelete(err, data) {
+      // pass to sort data into ref contract types
+      let libraryData = {}
+      libraryData.data = data
+      libraryData.type = 'peerprivatedelete'
+    }
+    function callbackPeerLib (err, data) {
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
       libraryData.type = 'peerprivate'
@@ -170,44 +252,70 @@ wsServer.on('connection', function ws(ws) {
         // secure connect to safeFLOW
         let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
         // OK with safeFLOW setup then bring peerDatastores to life
-        peerStoreLive.setupDatastores()
+        // peerStoreLive.setupDatastores()
         ws.send(JSON.stringify(authStatus))
       } else if (o.action === 'cloudauth') {
+        // console.log('auth1')
         // does the username and password on the allow list?
         let allowPeers = JSON.parse(process.env.PEER_LIST)
         let authPeer = false
         for (let pID of allowPeers) {
           if (pID.peer === o.data.peer && pID.pw === o.data.password) {
-            // OK with safeFLOW setup then bring peerDatastores to life
-            // peerStoreLive.setupDatastores()
             authPeer = true
           }
         }
-        if (authPeer === true) {
+        // is the peer already connected and authorised?
+        // no peers connected and autherise
+        let getAuth = Object.keys(pairSockTok)
+        let numAuth = getAuth.length
+        // can only be one token auth at same time
+        if (jwtList.length > 0) {
+          authPeer = false
+        }
+        // is the peer already connected?
+        let alreadyConnect = pairSockTok[o.data.peer]
+        let peerAuthed = pairSockTok[ws.id]
+        if (authPeer === true && alreadyConnect === undefined) {
           // setup safeFLOW
-          jwtList.push('jwttoken')
-          // let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+          if (setFlow === false && alreadyConnect === undefined) {
+            console.log('activate listeners')
+            peerListeners(ws)
+          }
+          // form token  (need to upgrade proper JWT)
+          let tokenString = crypto.randomBytes(64).toString('hex')
+          jwtList.push(tokenString)
+          // create socketid, token pair
+          pairSockTok[ws.id] = tokenString
+          pairSockTok[o.data.peer] = tokenString
+          let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
           // send back JWT
-          authStatus.jwt = 'jwttoken'
+          authStatus.jwt = tokenString
           ws.send(JSON.stringify(authStatus))
         } else {
-          console.log('lets send message failed auth')
+          let authFailStatus = {}
+          authFailStatus.safeflow = true
+          authFailStatus.type = 'auth'
+          authFailStatus.auth = false
+          ws.send(JSON.stringify(authFailStatus))
         }
       }
     }
     // need to check if cloud account is allow access to process message?
     // be good use of JWT TODO
     // valid jwt?
-    o.jwt = 'jwttoken' // allow for local setup
-    let jwtStatus = true  // set to false for cloud
+    let jwtStatus = false
     for (let pt of jwtList) {
       if (pt === o.jwt) {
         jwtStatus = true
       } else {
-        console.log('for use in cloud')
-        jwtStatus = true
+        /* let authFailStatus = {}
+        authFailStatus.safeflow = true
+        authFailStatus.type = 'auth'
+        authFailStatus.auth = false
+        ws.send(JSON.stringify(authFailStatus)) */
       }
     }
+
     if (jwtStatus === true) {
       if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
         if (o.action === 'question') {
@@ -226,18 +334,18 @@ wsServer.on('connection', function ws(ws) {
           ws.send(JSON.stringify(futureData)) */
         }
       } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
-        console.log('safeFLOW logic')
-        /* if (o.action === 'auth') {
+        if (o.action === 'auth') {
           // secure connect to safeFLOW
-          console.log('auth start')
           let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
           // OK with safeFLOW setup then bring peerDatastores to life
-          peerStoreLive.setupDatastores()
+          // peerStoreLive.setupDatastores()
           ws.send(JSON.stringify(authStatus))
         } else if (o.action === 'cloudauth') {
-          console.log('cloud auth START')
+          console.log('auth2')
           // does the username and password on the allow list?
-          let allowPeers = [ { peer: 'aboynejames@gmail.com', pw: '123' }, { peer: 'bioregion@gmail.com', pw: '123' }, { peer: 'damahub@gmail.com', pw: '123' }]
+          // form token  (need to upgrade proper JWT)
+          let tokenString = crypto.randomBytes(64).toString('hex')
+          jwtList.push(tokenString)
           let authPeer = false
           for (let pID of allowPeers) {
             if (pID.peer === o.data.peer && pID.pw === o.data.password) {
@@ -246,28 +354,41 @@ wsServer.on('connection', function ws(ws) {
           }
           if (authPeer === true) {
             // setup safeFLOW
-            console.log('starting connection to safeFLOW success')
-            jwtList.push('jwttoken')
             let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
             // send back JWT
-            authStatus.jwt = 'jwttoken'
+            authStatus.jwt = tokenString
             ws.send(JSON.stringify(authStatus))
           } else {
-            console.log('lets send message failed auth')
-          } */
-        if (o.action === 'dataAPIauth') {
-            console.log('auth APIS third party datastore(s)')
+            let authFailStatus = {}
+            authFailStatus.safeflow = true
+            authFailStatus.type = 'auth'
+            authFailStatus.auth = false
+            ws.send(JSON.stringify(authFailStatus))
+          }
+        } else if (o.action === 'dataAPIauth') {
             let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
             // if verified then load starting experiments into ECS-safeFLOW
             ws.send(JSON.stringify(datastoreStatus))
             // check the public network library
             // peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
         } else if (o.action === 'disconnect') {
+          console.log('safelow ws message exit')
           // in cloud mode cannot close whole app
           // remove JWT from list
           let index = jwtList.indexOf(o.jwt)
           jwtList.splice(index, 1)
+          pairSockTok = {}
           // process.exit(0)
+          liveSafeFLOW = {}
+          setFlow = false
+          ws.on('close', ws => {
+            console.log('close manual')
+            // process.exit(0)
+            jwtList = []
+            pairSockTok = {}
+            liveSafeFLOW = {}
+            setFlow = false
+          })
         } else if (o.action === 'networkexperiment') {
           // send summary info that HOP has received NXP bundle
           let ecsData = await liveSafeFLOW.startFlow(o.data)
@@ -280,6 +401,8 @@ wsServer.on('connection', function ws(ws) {
           let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
         }
       } else if (o.type.trim() === 'library' ) {
+        // console.log('biary')
+        // console.log(o)
         // library routing
         if (o.reftype.trim() === 'convert-csv-json') {
           // save protocol original file save and JSON for HOP
@@ -288,6 +411,12 @@ wsServer.on('connection', function ws(ws) {
           } else if (o.data.source === 'web') {
             liveParser.webFileParse(o, ws)
           }
+        } else if (o.reftype.trim() === 'save-json-json') {
+            if (o.data.source === 'local') {
+              await liveParser.localJSONfile(o, ws)
+            } else if (o.data.source === 'web') {
+              liveParser.webJSONfile(o, ws)
+            }
         } else if (o.reftype.trim() === 'viewpublickey') {
           // two peer syncing reference contracts
           const pubkey = peerStoreLive.singlePublicKey('', callbackKey)
@@ -300,14 +429,24 @@ wsServer.on('connection', function ws(ws) {
           peerStoreLive.addPeer(o.data, callbackPeerNetwork)
         } else if (o.reftype.trim() === 'warm-peers') {
           peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
+        } else if (o.reftype.trim() === 'addpubliclibraryentry') {
+          // take the ID of nxp selected to added to peers own public library
+          peerStoreLive.publicLibraryAddentry(o.data, callbackPlibraryAdd)
+        } else if (o.reftype.trim() === 'removetemppubliclibrary') {
+          // remove temp peers friends library
+          peerStoreLive.publicLibraryRemoveTempNL(o.data, 'temp')
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
-          const replicateStore = peerStoreLive.peerRefContractReplicate(o.publickey, callbacklibrary)
+          const replicateStore = peerStoreLive.publicLibraryReceive(o.publickey, callbackReplicatereceive)
+        } else if (o.reftype.trim() === 'view-replicatelibrary') {
+          // read the replicate library
+          peerStoreLive.libraryGETReplicateLibrary(o.publickey, callbackReplicatelibrary)
         } else if (o.reftype.trim() === 'publiclibrary') {
-          // console.log('public library')
           peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
         } else if (o.reftype.trim() === 'privatelibrary') {
-          peerStoreLive.peerGETRefContracts('all', callbackPeer)
+          peerStoreLive.peerGETRefContracts('all', callbackPeerLib)
+        } else if (o.reftype.trim() === 'removepeer') {
+          peerStoreLive.peerREMOVERefContracts(o.data, callbackPeerDelete)
         } else if (o.reftype.trim() === 'datatype') {
           // query peer hypertrie for datatypes
           if (o.action === 'GET') {
@@ -335,7 +474,7 @@ wsServer.on('connection', function ws(ws) {
             peerStoreLive.libraryStoreRefContract(o)
           }
         } else if (o.reftype.trim() === 'packaging') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie for
           if (o.action === 'GET') {
             // peerStoreLive.peerGETRefContracts('packaging', callback)
           } else {
@@ -344,7 +483,7 @@ wsServer.on('connection', function ws(ws) {
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'visualise') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie for
           if (o.action === 'GET') {
             // peerStoreLive.peerGETRefContracts('visualise', callback)
           } else {
@@ -353,7 +492,7 @@ wsServer.on('connection', function ws(ws) {
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'experiment') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie for
           if (o.action === 'GET') {
             // peerStoreLive.peerGETRefContracts('experiment', callback)
           } else {
@@ -436,7 +575,7 @@ wsServer.on('connection', function ws(ws) {
           const savedFeedback = peerStoreLive.libraryStoreRefContract(genesisRefContract)
           ws.send(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'kbid') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie for
           if (o.action === 'GET') {
             kbidStoreLive.peerGETkbids('kbid', callback)
           } else {
@@ -473,7 +612,7 @@ wsServer.on('connection', function ws(ws) {
           joinExpDisplay.options = experimentOptions
           ws.send(JSON.stringify(joinExpDisplay))
         } else if (o.reftype.trim() === 'module') {
-          // query peer hypertrie for packaging
+          // query peer hypertrie
           if (o.action === 'GET') {
             peerStoreLive.peerGETRefContracts('module', callback)
           } else {
@@ -503,12 +642,10 @@ wsServer.on('connection', function ws(ws) {
           const savedFeedback = peerStoreLive.libraryStoreRefContract(moduleRefContract)
           ws.send(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'newlifeboard') {
-          console.log('new lifeboard ref cont to create')
           let lifeboardRefContract = liveLibrary.liveComposer.lifeboardComposer(o.data, 'new')
           const saveLB = peerStoreLive.lifeboardStoreRefContract(lifeboardRefContract)
           ws.send(JSON.stringify(saveLB))
         } else if (o.reftype.trim() === 'addlifeboard') {
-          console.log('add link to master lifebarod ref contract')
           let lifeboardMember = liveLibrary.liveComposer.lifeboardComposer(o.data, 'member')
           const saveLBmember = peerStoreLive.lifeboardStoreRefContract(lifeboardMember)
           ws.send(JSON.stringify(saveLBmember))
@@ -517,6 +654,16 @@ wsServer.on('connection', function ws(ws) {
         } else {
           console.log('network library no match')
         }
+      } else if (o.reftype.trim() === 'bentospace') {
+        console.log('bento space  what sub action?')
+        console.log(o)
+          if (o.action.trim() === 'save-position') {
+            peerStoreLive.addBentospaces(o.data, callbackBentospace)
+          } else if (o.action.trim() === 'list-position') {
+            peerStoreLive.listBentospaces(callbackListBentospace)
+          } else {
+            console.log('no action bentospace')
+          }
       } else {
         console.log('nothing matched tell of that')
       }
@@ -525,7 +672,11 @@ wsServer.on('connection', function ws(ws) {
     }
   })
   ws.on('close', ws => {
-    console.log('close ws')
+    console.log('close ws direct')
+    jwtList = []
+    pairSockTok = {}
+    liveSafeFLOW = {}
+    setFlow = false
     // process.exit(0)
   })
   ws.on('error', ws => {
