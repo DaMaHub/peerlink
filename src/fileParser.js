@@ -82,6 +82,8 @@ FileParser.prototype.localFileParse = async function (o, ws) {
   // file input management
   // extract out the headers name for columns
   let headerSet = this.extractCSVHeaderInfo(o)
+  console.log('header set')
+  console.log(headerSet)
   // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
   let newPathFile = this.saveOriginalProtocol(o)
   //  csv to JSON convertion and save into HOP
@@ -240,8 +242,11 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
   const datacolumn = o.data.info.datename
   const flowList = []
   for (const rs of results) {
+    console.log(rs)
     const dateFormat = new Date(rs[datacolumn])
+    console.log(dateFormat)
     const msDate = dateFormat.getTime()
+    console.log(msDate)
     rs[datacolumn] = msDate / 1000
     flowList.push(rs)
   }

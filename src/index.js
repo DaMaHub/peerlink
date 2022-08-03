@@ -1,4 +1,11 @@
 'use strict'
+import { dirname } from 'path'
+import { fileURLToPath } from 'url'
+const _dirname = typeof __dirname !== 'undefined'
+  ? __dirname
+  : dirname(fileURLToPath(import.meta.url))
+console.log('path')
+console.log(_dirname)
 import { createServer } from 'https'
 // import { createServer } from 'http'
 import fs from 'fs'
@@ -31,10 +38,9 @@ let liveSafeFLOW = {}
 let setFlow = false
 let libraryData = {}
 let rateQueue = []
-// https options for crypto
 const options = {
-  key: fs.readFileSync('src/key.pem'),
-  cert: fs.readFileSync('src/cert.pem')
+  key: fs.readFileSync(_dirname + '/key.pem'),
+  cert: fs.readFileSync(_dirname + '/cert.pem')
 }
 
 // const server = createServer((request, response) => {
@@ -405,6 +411,8 @@ wsServer.on('connection', function ws(ws, req) {
         // console.log(o)
         // library routing
         if (o.reftype.trim() === 'convert-csv-json') {
+          console.log('csv jon start')
+          console.log(o)
           // save protocol original file save and JSON for HOP
           if (o.data.source === 'local') {
             await liveParser.localFileParse(o, ws)
