@@ -254,11 +254,22 @@ wsServer.on('connection', function ws(ws, req) {
     // console.log(o)
     // first check if firstime connect
     if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
-      if (o.action === 'auth') {
+      if (o.action === 'cloudauth') {
         // secure connect to safeFLOW
-        let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+        // let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
         // OK with safeFLOW setup then bring peerDatastores to life
         // peerStoreLive.setupDatastores()
+        // ws.send(JSON.stringify(authStatus))
+        peerListeners(ws)
+        let authPeer = true
+        let tokenString = crypto.randomBytes(64).toString('hex')
+        jwtList.push(tokenString)
+        // create socketid, token pair
+        pairSockTok[ws.id] = tokenString
+        pairSockTok[o.data.peer] = tokenString
+        let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+        // send back JWT
+        authStatus.jwt = tokenString
         ws.send(JSON.stringify(authStatus))
       } else if (o.action === 'cloudauth') {
         // console.log('auth1')
