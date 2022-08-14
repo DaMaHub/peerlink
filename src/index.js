@@ -4,8 +4,8 @@ import { fileURLToPath } from 'url'
 const _dirname = typeof __dirname !== 'undefined'
   ? __dirname
   : dirname(fileURLToPath(import.meta.url))
-console.log('path')
-console.log(_dirname)
+// console.log('path')
+// console.log(_dirname)
 import { createServer } from 'https'
 // import { createServer } from 'http'
 import fs from 'fs'
@@ -254,7 +254,7 @@ wsServer.on('connection', function ws(ws, req) {
     // console.log(o)
     // first check if firstime connect
     if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
-      if (o.action === 'cloudauth') {
+      if (o.action === 'selfauth') {
         // secure connect to safeFLOW
         // let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
         // OK with safeFLOW setup then bring peerDatastores to life
@@ -696,7 +696,7 @@ wsServer.on('connection', function ws(ws, req) {
     pairSockTok = {}
     liveSafeFLOW = {}
     setFlow = false
-    // process.exit(0)
+    process.exit(0)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')

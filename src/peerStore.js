@@ -44,6 +44,7 @@ util.inherits(PeerStoreWorker, events.EventEmitter)
 *
 */
 PeerStoreWorker.prototype.setupDatastores = function () {
+  const localthis = this
   if (fs.existsSync(os.homedir() + this.storepath)) {
     // Do something
     // setup datastores
@@ -55,7 +56,7 @@ PeerStoreWorker.prototype.setupDatastores = function () {
       } else {
         console.log("New directory successfully created.")
         // setup datastores
-        this.activateDatastores()
+        localthis.activateDatastores()
       }
     })
   }
@@ -283,6 +284,7 @@ PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
   let rpeer1Key = Buffer.from(key, "hex")
   // has the peers key and datastore been setup already?
   if (this.datastoreNL2 === undefined) {
+    console.log('nol setup??')
     localthis.datastoreNL2 = hypertrie(os.homedir() + this.storepath + '/librarynetwork2.db', rpeer1Key, {valueEncoding: 'json'})
     liveSwarm.join(rpeer1Key, {
       lookup: true, // find & connect to peers
@@ -290,7 +292,7 @@ PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
     })
     this.datastoreNL2.ready(() => {
       liveSwarm.on('connection', function (socket, details) {
-        console.log('RECEIVE swarm connect peer')
+        console.log('RECEIVEnl2 swarm connect peer')
         // connectCount++
         // console.log(connectCount)
         pump(socket, localthis.datastoreNL2.replicate(false, { live: true }), socket)
@@ -317,6 +319,7 @@ PeerStoreWorker.prototype.publicLibraryReceive = function (key, callback) {
 *
 */
 PeerStoreWorker.prototype.publicLibraryAddentry = function (nxp, callback) {
+  console.log('add entry from nl2')
   const localthis = this
   // this.datastoreNL2.get(nxp.nxpID, console.log)
   this.datastoreNL2.get(nxp.nxpID, function (err, entry) {
@@ -399,7 +402,8 @@ PeerStoreWorker.prototype.libraryGETRefContracts = function (getType, callback) 
 *
 */
 PeerStoreWorker.prototype.libraryGETReplicateLibrary = function (getType, callback) {
-  console.log(this.datastoreNL2)
+  console.log('using NL2')
+  // console.log(this.datastoreNL2)
   if (this.datastoreNL2) {
     this.datastoreNL2.list( { ifAvailable: true }, callback)
     return true
