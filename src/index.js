@@ -418,8 +418,8 @@ wsServer.on('connection', function ws(ws, req) {
           let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
         }
       } else if (o.type.trim() === 'library' ) {
-        // console.log('biary')
-        // console.log(o)
+        console.log('biary')
+        console.log(o)
         // library routing
         if (o.reftype.trim() === 'convert-csv-json') {
           console.log('csv jon start')
@@ -430,6 +430,9 @@ wsServer.on('connection', function ws(ws, req) {
           } else if (o.data.source === 'web') {
             liveParser.webFileParse(o, ws)
           }
+        } else if (o.reftype.trim() === 'sync-nxp-data') {
+          console.log('request to sync data for a contract')
+          // route to peerstore to replicate
         } else if (o.reftype.trim() === 'save-json-json') {
             if (o.data.source === 'local') {
               await liveParser.localJSONfile(o, ws)
