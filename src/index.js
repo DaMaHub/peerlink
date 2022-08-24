@@ -14,11 +14,12 @@ import { WebSocketServer } from 'ws'
 import uuid from 'uuid'
 import throttledQueue from 'throttled-queue'
 import CaleAi from 'cale-holism'
+import HOP from 'node-safeflow'
+// import KBIDstoreWorker from './hop/kbidStore.js'
 import LibComposer from 'librarycomposer'
-import SafeFLOW from 'node-safeflow'
-import DatastoreWorker from './peerStore.js'
-import KBIDstoreWorker from './kbidStore.js'
-import FileParser from './fileParser.js'
+import HyperspaceProtocol from './data/hyperspace.js'
+import DatastoreWorker from './data/peerStore.js'
+import FileParser from './data/fileParser.js'
 import os from 'os'
 import dotenv from 'dotenv'
 dotenv.config()
@@ -28,12 +29,21 @@ let jwtList = []
 let pairSockTok = {}
 const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
-let peerStoreLive =  new DatastoreWorker(localpath) // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
+const liveHyperspace = new HyperspaceProtocol()
+await liveHyperspace.startHyperspace()
+// await liveHyperspace.clearcloseHyperspace()
+await liveHyperspace.setupHyperdrive()
+await liveHyperspace.hyperdriveFolderFiles()
+await liveHyperspace.hyperdriveReplicate()
+await liveHyperspace.setupHyperbee()
+await liveHyperspace.saveHyperbeeDB()
+await liveHyperspace.getHyperbeeDB()
+let peerStoreLive = new DatastoreWorker(localpath) // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
 // OK with safeFLOW setup then bring peerDatastores to life
 peerStoreLive.setupDatastores()
 const liveParser = new FileParser(localpath)
 let kbidStoreLive // not in use
-// const liveSafeFLOW = new SafeFLOW()
+// const liveSafeFLOW = new HOP()
 let liveSafeFLOW = {}
 let setFlow = false
 let libraryData = {}
@@ -66,7 +76,7 @@ const wsServer = new WebSocketServer({ server })
 // listenr for data back from ECS
 function peerListeners (ws) {
   // console.log('batch of safeFlowlisterners')
-  liveSafeFLOW = new SafeFLOW()
+  liveSafeFLOW = new HOP()
   setFlow = true
   // callbacks for datastores
   function resultsCallback (entity, err, data) {
@@ -476,7 +486,9 @@ wsServer.on('connection', function ws(ws, req) {
           } else {
             // save a new refContract
             const newRefContract = o.refContract
-            const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
+            // const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
+            // switch to hyperbee
+            liveHyperspace.saveHyperbeeDB()
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'compute') {

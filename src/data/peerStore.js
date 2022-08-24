@@ -247,7 +247,7 @@ PeerStoreWorker.prototype.privatePeerLibraryReplicate = function (pk, callback) 
 *
 */
 PeerStoreWorker.prototype.publicLibraryReplicate = function () {
-  console.log('publiclibrary open for replication')
+  console.log('publiclibrary open for replication-org')
   // hardwired to public network library for now
   const localthis = this
   let liveSwarm = new hyperswarm()
