@@ -84,12 +84,12 @@ FileParser.prototype.localFileParse = async function (o, ws) {
   let headerSet = this.extractCSVHeaderInfo(o)
   console.log('header set')
   console.log(headerSet)
-  // protocol should be to save original file to safeNetwork / IPFS etc. peers choice
+  // protocol should be to save original file
   let newPathFile = this.saveOriginalProtocol(o)
   //  csv to JSON convertion and save into HOP
   // const praser = readStream(newPathcsv, headerSet, delimiter, dataline)
   const parser = await this.readFileStream(newPathFile, headerSet)
-  this.convertJSON(o, ws, headerSet, parser, 'local', null)
+  this.convertJSON(o, headerSet, parser, 'local', null)
 }
 
 /**
@@ -231,8 +231,10 @@ FileParser.prototype.readFileStream = async function (fpath, headerSet) {
 * @method convertJSON
 *
 */
-FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, newFilename) {
+FileParser.prototype.convertJSON = function (o, headerSet, results, source, newFilename) {
   const localthis = this
+  // console.log('convert json')
+  // console.log(results)
   let fileName = ''
   if (source !== 'web') {
     fileName = o.data.name
@@ -242,15 +244,19 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
   const datacolumn = o.data.info.datename
   const flowList = []
   for (const rs of results) {
-    console.log(rs)
     const dateFormat = new Date(rs[datacolumn])
-    console.log(dateFormat)
     const msDate = dateFormat.getTime()
-    console.log(msDate)
     rs[datacolumn] = msDate / 1000
     flowList.push(rs)
   }
   const jsonFlow = JSON.stringify(flowList)
+  let fileJSONbundle = {}
+  fileJSONbundle.path = 'json'
+  fileJSONbundle.name = fileName + '.json'
+  fileJSONbundle.data = jsonFlow
+  return fileJSONbundle
+  // do via hyperspace protocol now
+  /* 
   fs.writeFile(os.homedir() + localthis.storepath + '/json/' + fileName + '.json', jsonFlow, 'utf8', function (err) {
     if (err) {
       console.log('An error occured while writing JSON Object to File.')
@@ -265,9 +271,20 @@ FileParser.prototype.convertJSON = function (o, ws, headerSet, results, source, 
     storeFeedback.type = 'file-save'
     storeFeedback.action = 'library'
     storeFeedback.data = fileFeedback
-    ws.send(JSON.stringify(storeFeedback))
-  })
+    return storeFeedback
+    // ws.send(JSON.stringify(storeFeedback))
+  }) */
 }
+
+/**
+* data protocol save
+* @method saveFileProtocol
+*
+*/
+FileParser.prototype.saveFileProtocol = function (o) {
+  console.log('return to hyperspace protocol')
+}
+
 
 /**
 * keep copy of source entering network library

@@ -18,7 +18,7 @@ import HOP from 'node-safeflow'
 // import KBIDstoreWorker from './hop/kbidStore.js'
 import LibComposer from 'librarycomposer'
 import HyperspaceProtocol from './data/hyperspace.js'
-import DatastoreWorker from './data/peerStore.js'
+// import DatastoreWorker from './data/peerStore.js'
 import FileParser from './data/fileParser.js'
 import os from 'os'
 import dotenv from 'dotenv'
@@ -33,17 +33,17 @@ const liveHyperspace = new HyperspaceProtocol()
 await liveHyperspace.startHyperspace()
 // await liveHyperspace.clearcloseHyperspace()
 await liveHyperspace.setupHyperdrive()
-await liveHyperspace.hyperdriveFolderFiles()
-await liveHyperspace.hyperdriveReplicate()
+// await liveHyperspace.hyperdriveWritestream()
+// await liveHyperspace.hyperdriveFolderFiles()
+// await liveHyperspace.hyperdriveReplicate()
 await liveHyperspace.setupHyperbee()
-await liveHyperspace.saveHyperbeeDB()
-await liveHyperspace.getHyperbeeDB()
-let peerStoreLive = new DatastoreWorker(localpath) // what PtoP infrastructure running on?  Safe Network, Hypercore? etc
+// await liveHyperspace.setupHyperbee3()
+// await liveHyperspace.saveHyperbeeDB()
+// await liveHyperspace.getHyperbeeDB('key')
+// let peerStoreLive = new DatastoreWorker(localpath) // will remove old what PtoP infrastructure running on?  Safe Network, Hypercore? etc
 // OK with safeFLOW setup then bring peerDatastores to life
-peerStoreLive.setupDatastores()
+// setupDatastores()  // will remove old
 const liveParser = new FileParser(localpath)
-let kbidStoreLive // not in use
-// const liveSafeFLOW = new HOP()
 let liveSafeFLOW = {}
 let setFlow = false
 let libraryData = {}
@@ -58,7 +58,7 @@ const options = {
   // server we don't have to implement anything.
 // })
 const server = createServer(options, (request, response) => {
-  // process HTTP request. Since we're writing just WebSockets
+  // process HTTPS request. Since we're writing just WebSockets
   // server we don't have to implement anything.
 })
 
@@ -115,18 +115,18 @@ function peerListeners (ws) {
   })
   liveSafeFLOW.on('updateModule', (data) => {
     let moduleRefContract = liveLibrary.liveComposer.moduleComposer(data, 'update')
-    const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
+    const savedFeedback = liveHyperspace.savePublicLibRefCont(moduleRefContract) // peerStoreLive.peerStoreRefContract(moduleRefContract)
   })
   liveSafeFLOW.on('storePeerResults', (data) => {
-    const savedFeedback = peerStoreLive.peerStoreResults(data)
+    const savedFeedback = liveHyperspace.saveHOPresults(data) // peerStoreLive.peerStoreResults(data)
   })
 
   liveSafeFLOW.on('checkPeerResults', async (data) => {
-    await peerStoreLive.peerStoreCheckResults(data, resultsCallback)
+    await liveHyperspace.peerResults(data) // peerStoreLive.peerStoreCheckResults(data, resultsCallback)
   })
 
   liveSafeFLOW.on('kbledgerEntry', (data) => {
-    const savedFeedback = peerStoreLive.peerKBLentry(data)
+    const savedFeedback = liveHyperspace.saveKBLentry(data) // peerStoreLive.peerKBLentry(data)
   })
 }
 // WebSocket server
@@ -397,6 +397,7 @@ wsServer.on('connection', function ws(ws, req) {
             // if verified then load starting experiments into ECS-safeFLOW
             ws.send(JSON.stringify(datastoreStatus))
             // check the public network library
+            liveHyperspace.hyperdriveReplicate('peer')
             // peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
         } else if (o.action === 'disconnect') {
           console.log('safelow ws message exit')
@@ -428,67 +429,83 @@ wsServer.on('connection', function ws(ws, req) {
           let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
         }
       } else if (o.type.trim() === 'library' ) {
-        console.log('biary')
+        console.log('library')
         console.log(o)
         // library routing
         if (o.reftype.trim() === 'convert-csv-json') {
           console.log('csv jon start')
-          console.log(o)
+          // console.log(o)
           // save protocol original file save and JSON for HOP
           if (o.data.source === 'local') {
-            await liveParser.localFileParse(o, ws)
+            let fileInfo = await liveHyperspace.hyperdriveFolderFiles(o)
+            let fileFeedback = {}
+            fileFeedback.success = true
+            fileFeedback.path = fileInfo.filename
+            fileFeedback.columns = fileInfo.header.splitwords
+            let storeFeedback = {}
+            storeFeedback.type = 'file-save'
+            storeFeedback.action = 'library'
+            storeFeedback.data = fileFeedback
+            console.log('save file feedback')
+            console.log(storeFeedback)
+            ws.send(JSON.stringify(storeFeedback))
+            // await liveParser.localFileParse(o, ws)
           } else if (o.data.source === 'web') {
-            liveParser.webFileParse(o, ws)
+            // liveParser.webFileParse(o, ws)
           }
         } else if (o.reftype.trim() === 'sync-nxp-data') {
           console.log('request to sync data for a contract')
           // route to peerstore to replicate
         } else if (o.reftype.trim() === 'save-json-json') {
             if (o.data.source === 'local') {
-              await liveParser.localJSONfile(o, ws)
+              // await liveParser.localJSONfile(o, ws)
             } else if (o.data.source === 'web') {
-              liveParser.webJSONfile(o, ws)
+              // liveParser.webJSONfile(o, ws)
             }
         } else if (o.reftype.trim() === 'viewpublickey') {
           // two peer syncing reference contracts
-          const pubkey = peerStoreLive.singlePublicKey('', callbackKey)
+          // const pubkey = liveHyperspace. // peerStoreLive.singlePublicKey('', callbackKey)
         } else if (o.reftype.trim() === 'openlibrary') {
           // two peer syncing reference contracts
-          const pubkey = peerStoreLive.openLibrary(o.data, callbackOpenLibrary)
+          // const pubkey = liveHyperspace. // peerStoreLive.openLibrary(o.data, callbackOpenLibrary)
         } else if (o.reftype.trim() === 'keymanagement') {
-          peerStoreLive.keyManagement(callbackKey)
+          // liveHyperspace.
+          // peerStoreLive.keyManagement(callbackKey)
         } else if (o.reftype.trim() === 'peer-add') {
-          peerStoreLive.addPeer(o.data, callbackPeerNetwork)
+          // peerStoreLive.addPeer(o.data, callbackPeerNetwork)
         } else if (o.reftype.trim() === 'warm-peers') {
-          peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
+          // liveHyperspace.
+          // peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
         } else if (o.reftype.trim() === 'addpubliclibraryentry') {
           // take the ID of nxp selected to added to peers own public library
-          peerStoreLive.publicLibraryAddentry(o.data, callbackPlibraryAdd)
+          // liveHyperspace.
+          // peerStoreLive.publicLibraryAddentry(o.data, callbackPlibraryAdd)
         } else if (o.reftype.trim() === 'removetemppubliclibrary') {
           // remove temp peers friends library
-          peerStoreLive.publicLibraryRemoveTempNL(o.data, 'temp')
+          // liveHyperspace.
+          // peerStoreLive.publicLibraryRemoveTempNL(o.data, 'temp')
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing reference contracts
-          const replicateStore = peerStoreLive.publicLibraryReceive(o.publickey, callbackReplicatereceive)
+          // const replicateStore = liveHyperspace. // peerStoreLive.publicLibraryReceive(o.publickey, callbackReplicatereceive)
         } else if (o.reftype.trim() === 'view-replicatelibrary') {
           // read the replicate library
-          peerStoreLive.libraryGETReplicateLibrary(o.publickey, callbackReplicatelibrary)
+          // peerStoreLive.libraryGETReplicateLibrary(o.publickey, callbackReplicatelibrary)
         } else if (o.reftype.trim() === 'publiclibrary') {
-          peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
+          // peerStoreLive.libraryGETRefContracts('all', callbacklibrary)
         } else if (o.reftype.trim() === 'privatelibrary') {
-          peerStoreLive.peerGETRefContracts('all', callbackPeerLib)
+          // peerStoreLive.peerGETRefContracts('all', callbackPeerLib)
         } else if (o.reftype.trim() === 'removepeer') {
-          peerStoreLive.peerREMOVERefContracts(o.data, callbackPeerDelete)
+          // peerStoreLive.peerREMOVERefContracts(o.data, callbackPeerDelete)
         } else if (o.reftype.trim() === 'datatype') {
           // query peer hypertrie for datatypes
           if (o.action === 'GET') {
-            const datatypeList = peerStoreLive.libraryGETRefContracts('datatype', callbacklibrary)
+            // const datatypeList = // peerStoreLive.libraryGETRefContracts('datatype', callbacklibrary)
           } else {
             // save a new refContract
             const newRefContract = o.refContract
             // const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
             // switch to hyperbee
-            liveHyperspace.saveHyperbeeDB()
+            liveHyperspace.savePeerLibrary(o)
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'compute') {
@@ -497,7 +514,7 @@ wsServer.on('connection', function ws(ws, req) {
             // peerStoreLive.peerGETRefContracts('compute', callback)
           } else {
             // save a new refContract
-            peerStoreLive.libraryStoreRefContract(o)
+            // peerStoreLive.libraryStoreRefContract(o)
           }
         } else if (o.reftype.trim() === 'units') {
           // query peer hypertrie for Units
@@ -505,7 +522,7 @@ wsServer.on('connection', function ws(ws, req) {
             // peerStoreLive.peerGETRefContracts('units', callback)
           } else {
             // save a new refContract
-            peerStoreLive.libraryStoreRefContract(o)
+            // peerStoreLive.libraryStoreRefContract(o)
           }
         } else if (o.reftype.trim() === 'packaging') {
           // query peer hypertrie for
@@ -513,7 +530,7 @@ wsServer.on('connection', function ws(ws, req) {
             // peerStoreLive.peerGETRefContracts('packaging', callback)
           } else {
             // save a new refContract
-            const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
+            const savedFeedback = // peerStoreLive.libraryStoreRefContract(o)
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'visualise') {
@@ -522,7 +539,7 @@ wsServer.on('connection', function ws(ws, req) {
             // peerStoreLive.peerGETRefContracts('visualise', callback)
           } else {
             // save a new refContract
-            const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
+            const savedFeedback = // peerStoreLive.libraryStoreRefContract(o)
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'experiment') {
@@ -531,7 +548,7 @@ wsServer.on('connection', function ws(ws, req) {
             // peerStoreLive.peerGETRefContracts('experiment', callback)
           } else {
             // save a new refContract
-            const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
+            const savedFeedback = // peerStoreLive.libraryStoreRefContract(o)
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'newexperimentmodule') {
@@ -542,7 +559,7 @@ wsServer.on('connection', function ws(ws, req) {
           for (let mh of o.data) {
             const moduleRefContract = liveLibrary.liveComposer.moduleComposer(mh, '')
             const moduleRefContractReady = JSON.stringify(moduleRefContract)
-            const savedFeedback = peerStoreLive.libraryStoreRefContract(moduleRefContract)
+            const savedFeedback = // peerStoreLive.libraryStoreRefContract(moduleRefContract)
             moduleGenesisList.push(savedFeedback.key)
             // stand key value format or query and get back ref contract double check TODO
             let moduleContract = {}
@@ -555,7 +572,7 @@ wsServer.on('connection', function ws(ws, req) {
             // aggregate all modules into exeriment contract
             let genesisRefContract = liveLibrary.liveComposer.experimentComposerGenesis(moduleGenesisList)
             // double check they are created
-            const savedFeedback = peerStoreLive.libraryStoreRefContract(genesisRefContract)
+            const savedFeedback = // peerStoreLive.libraryStoreRefContract(genesisRefContract)
             savedFeedback.expanded = moduleGenesisExpanded
             ws.send(JSON.stringify(savedFeedback))
           }
@@ -586,7 +603,7 @@ wsServer.on('connection', function ws(ws, req) {
               peerModules.settings = o.data.options.visualise
             }
             let moduleRefContract = liveLibrary.liveComposer.moduleComposer(peerModules, 'join')
-            const savedFeedback = peerStoreLive.peerStoreRefContract(moduleRefContract)
+            const savedFeedback = liveHyperspace. // peerStoreLive.peerStoreRefContract(moduleRefContract)
             moduleJoinedList.push(savedFeedback.key)
             // form key value refcont structure
             let moduleKeyValue = {}
@@ -600,13 +617,13 @@ wsServer.on('connection', function ws(ws, req) {
             // aggregate all modules into exeriment contract
             // double check they are created
             let joinRefContract = liveLibrary.liveComposer.experimentComposerJoin(moduleJoinedList)
-            const savedFeedback = peerStoreLive.peerStoreRefContract(joinRefContract)
+            const savedFeedback = liveHyperspace. // peerStoreLive.peerStoreRefContract(joinRefContract)
             savedFeedback.expanded = moduleJoinedExpanded
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'genesisexperiment') {
           let genesisRefContract = liveLibrary.liveComposer.experimentComposerGenesis(o.data)
-          const savedFeedback = peerStoreLive.libraryStoreRefContract(genesisRefContract)
+          const savedFeedback = liveHyperspace. // peerStoreLive.libraryStoreRefContract(genesisRefContract)
           ws.send(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'kbid') {
           // query peer hypertrie for
@@ -648,10 +665,10 @@ wsServer.on('connection', function ws(ws, req) {
         } else if (o.reftype.trim() === 'module') {
           // query peer hypertrie
           if (o.action === 'GET') {
-            peerStoreLive.peerGETRefContracts('module', callback)
+            // peerStoreLive.peerGETRefContracts('module', callback)
           } else {
             // save a new refContract
-            const savedFeedback = peerStoreLive.libraryStoreRefContract(o)
+            const savedFeedback = liveHyperspace. // peerStoreLive.libraryStoreRefContract(o)
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'moduletemp') {
@@ -673,18 +690,19 @@ wsServer.on('connection', function ws(ws, req) {
           ws.send(JSON.stringify(moduleTempData))
         } else if (o.reftype.trim() === 'newmodules') {
           let moduleRefContract = liveLibrary.liveComposer.moduleComposer(o.data, 'join')
-          const savedFeedback = peerStoreLive.libraryStoreRefContract(moduleRefContract)
+          // const savedFeedback = liveHyperspace. // peerStoreLive.libraryStoreRefContract(moduleRefContract)
           ws.send(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'newlifeboard') {
           let lifeboardRefContract = liveLibrary.liveComposer.lifeboardComposer(o.data, 'new')
-          const saveLB = peerStoreLive.lifeboardStoreRefContract(lifeboardRefContract)
+          // const saveLB = liveHyperspace. // peerStoreLive.lifeboardStoreRefContract(lifeboardRefContract)
           ws.send(JSON.stringify(saveLB))
         } else if (o.reftype.trim() === 'addlifeboard') {
           let lifeboardMember = liveLibrary.liveComposer.lifeboardComposer(o.data, 'member')
-          const saveLBmember = peerStoreLive.lifeboardStoreRefContract(lifeboardMember)
+          // const saveLBmember = liveHyperspace. // peerStoreLive.lifeboardStoreRefContract(lifeboardMember)
           ws.send(JSON.stringify(saveLBmember))
         } else if (o.reftype.trim() === 'peerLifeboard') {
-          peerStoreLive.peerGETLifeboards('all', callbackLifeboard)
+          // liveHyperspace.
+          // peerStoreLive.peerGETLifeboards('all', callbackLifeboard)
         } else {
           console.log('network library no match')
         }
@@ -692,9 +710,11 @@ wsServer.on('connection', function ws(ws, req) {
         console.log('bento space  what sub action?')
         console.log(o)
           if (o.action.trim() === 'save-position') {
-            peerStoreLive.addBentospaces(o.data, callbackBentospace)
+            // liveHyperspace.
+            // peerStoreLive.addBentospaces(o.data, callbackBentospace)
           } else if (o.action.trim() === 'list-position') {
-            peerStoreLive.listBentospaces(callbackListBentospace)
+            // liveHyperspace.
+            // peerStoreLive.listBentospaces(callbackListBentospace)
           } else {
             console.log('no action bentospace')
           }
@@ -711,11 +731,11 @@ wsServer.on('connection', function ws(ws, req) {
     pairSockTok = {}
     liveSafeFLOW = {}
     setFlow = false
-    process.exit(0)
+    // process.exit(0)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')
-    process.exit(1)
+    // process.exit(1)
   })
 })
 
