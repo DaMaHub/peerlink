@@ -86,7 +86,6 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   // Create a Hyperdrive
   const corestore = new Corestore('storage')
   this.drive = new Hyperdrive(corestore, null)
-  console.log('after hyperdirve')
   await this.drive.ready()
   console.log('New drive created, key:')
   console.log('  ', this.drive.key.toString('hex'))
@@ -108,7 +107,7 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   })
   
   await this.dbPublicLibrary.ready()
-  console.log(this.dbPublicLibrary._feed)
+  // console.log(this.dbPublicLibrary._feed)
 
   const core2 = store.get({ name: 'peerlibrary' })
   this.dbPeerLibrary = new Hyperbee(core2, {
@@ -117,7 +116,6 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   })
   
   await this.dbPeerLibrary.ready()
-  console.log(this.dbPeerLibrary._feed)
 
   const core6 = store.get({ name: 'peers' })
   this.dbPeers = new Hyperbee(core6, {
@@ -126,7 +124,6 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   })
   
   await this.dbPeers.ready()
-  console.log(this.dbPeers._feed)
 
   const core3 = store.get({ name: 'bentospaces' })
   this.dbBentospaces = new Hyperbee(core3, {
@@ -135,7 +132,6 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   })
   
   await this.dbBentospaces.ready()
-  console.log(this.dbBentospaces._feed)
 
   const core4 = store.get({ name: 'hopresults' })
   this.dbHOPresults = new Hyperbee(core4, {
@@ -144,7 +140,6 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   })
   
   await this.dbHOPresults.ready()
-  console.log(this.dbHOPresults._feed)
 
   const core5 = store.get({ name: 'kbledger' })
   this.dbKBledger = new Hyperbee(core5, {
@@ -153,36 +148,39 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   })
   
   await this.dbKBledger.ready()
-  console.log(this.dbKBledger._feed)
 }
-
-/**
- * save pair in keystore db
- * @method saveHyperbeeDB
- *
- */
- HyperspaceWorker.prototype.savePeerLibrary = async function (dataPair) {
-
-  // if you own the feed
-  await this.dbPeerLibrary.put('key', 'value3')
-  // await this.dbbee3.put('key', 'value3')
-  // await this.dbbee3.put('key2', 'value3')
-  // await this.dbbee3.put('some-key')
-  console.log('save ref contract bee')
- }
 
  /**
  * save pair in keystore public network library
- * @method savePublicLibRefCont
+ * @method savePubliclibrary
  *
  */
-  HyperspaceWorker.prototype.savePublicLibRefCont = async function (dataPair) {
-  console.log('public lib ref cont save')
-  console.log(dataPair)
-  // if you own the feed
-  await this.dbPublicLibrary.put(dataPair.hash, dataPair.contract)
-  // need to return info.
-}
+  HyperspaceWorker.prototype.savePubliclibrary = async function (refContract) {
+    await this.dbPublicLibrary.put(refContract.hash, refContract.contract)
+    let returnMessage = {}
+    returnMessage.stored = true
+    returnMessage.type = refContract.reftype
+    returnMessage.key = refContract.hash
+    returnMessage.contract = refContract.contract
+    return returnMessage
+  }
+  
+
+/**
+ * save pair in keystore db
+ * @method savePeerLibrary
+ *
+ */
+ HyperspaceWorker.prototype.savePeerLibrary = async function (refContract) {
+
+  await this.dbPeerLibrary.put(refContract.hash, refContract.contract)
+  let returnMessage = {}
+  returnMessage.stored = true
+  returnMessage.type = refContract.reftype
+  returnMessage.key = refContract.hash
+  returnMessage.contract = refContract.contract
+  return returnMessage
+ }
 
 /**
 * save kbledger entry
@@ -207,11 +205,78 @@ HyperspaceWorker.prototype.saveHOPresults = async function (refContract) {
  * @method getHyperbeeDB
  *
  */
-  HyperspaceWorker.prototype.getHyperbeeDB = async function (refchash) {
+HyperspaceWorker.prototype.getHyperbeeDB = async function (refchash) {
   // if you want to query the feed
-  const nodeData = await this.dbbee3.get(refchash) // null or { key, value }
-  console.log(nodeData)
-  console.log('retrieve key bee')
+  const nodeData = await this.dbbee3.get(refchash)
+
+}
+
+/**
+* lookup specific result UUID
+* @method getPublicLibrary
+*
+*/
+HyperspaceWorker.prototype.getPublicLibrary = async function (contractID) {
+  const nodeData = await this.dbPublicLibrary.get(contractID)
+  return nodeData
+}
+
+/**
+* lookup range query of db
+* @method getPublicLibraryRange
+*
+*/
+HyperspaceWorker.prototype.getPublicLibraryRange = async function (dataPrint) {
+  const nodeData = this.dbPublicLibrary.createReadStream() // { gt: 'a', lt: 'z' }) // anything >a and <z
+  let contractData = []
+  for await (const { key, value } of nodeData) {
+    contractData.push({ key, value })
+  }
+  return contractData
+}
+
+/**
+* return the last entry into db
+* @method getPublicLibraryLast
+*
+*/
+HyperspaceWorker.prototype.getPublicLibraryLast = async function (dataPrint) {
+  const nodeData = this.dbPublicLibrary.createHistoryStream({ reverse: true, limit: 1 })
+  return nodeData
+}
+
+/**
+* lookup al peer library entries
+* @method getPeerLibrary
+*
+*/
+HyperspaceWorker.prototype.getPeerLibrary = async function (contractID) {
+  const nodeData = await this.dbPeerLibrary.get(contractID)
+  return nodeData
+}
+
+/**
+* lookup al peer library range
+* @method getPeerLibraryRanage
+*
+*/
+HyperspaceWorker.prototype.getPeerLibraryRange = async function () {
+  const nodeData = await this.dbPeerLibrary.createReadStream() // { gt: 'a', lt: 'z' })
+  let contractData = []
+  for await (const { key, value } of nodeData) {
+    contractData.push({ key, value })
+  }
+  return contractData
+}
+
+/**
+* lookup al peer library Last entry
+* @method getPeerLibraryLast
+*
+*/
+HyperspaceWorker.prototype.getPeerLibraryLast = async function () {
+  const nodeData = await this.dbPeerLibrary.createHistoryStream({ reverse: true, limit: 1 })
+  return nodeData
 }
 
 /**
@@ -220,7 +285,6 @@ HyperspaceWorker.prototype.saveHOPresults = async function (refContract) {
 *
 */
 HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
-  // console.log('peer store query')
   const nodeData = await this.dbHOPresults.get(dataPrint.resultuuid)
   return nodeData
 }
@@ -249,8 +313,6 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
  *
  */
  HyperspaceWorker.prototype.hyperdriveWritestream = async function (fileData) {
-  console.log('save file hyperdrive')
-  // console.log(this.drive)
   let localthis = this
   const ws = this.drive.createWriteStream('/blob.txt')
 
@@ -276,8 +338,7 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
   // file input management
   // protocol to save original file
   let newPathFile = await this.hyperdriveFilesave(fileData.data.type, fileData.data.name, fileData.data.path)
-  console.log('newpath-hyperdrive')
-  console.log(newPathFile)
+
   // extract out the headers name for columns
   let headerSet = this.fileUtility.extractCSVHeaderInfo(fileData)
   // let drivePath = fileData.data.type
@@ -304,19 +365,15 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
  HyperspaceWorker.prototype.hyperdriveFilesave = async function (path, name, data) {
   // File writes
   let hyperdrivePath = path + '/' + name
-  console.log('path')
-  console.log(hyperdrivePath)
   var dataUrl = data.split(",")[1]
   var buffer = Buffer.from(dataUrl, 'base64')
   fs.writeFileSync('data.csv', buffer)
   if (path === 'text/csv') {
-    console.log('csv')
     await this.drive.put(hyperdrivePath, fs.readFileSync('data.csv', 'utf-8'))
     // hyperdrive 10 code
     // await this.drive.promises.writeFile(hyperdrivePath , data)
     // await this.drive.promises.writeFile('/stuff/file2.bin', Buffer.from([0,1,2,4]))
   } else if (path === 'json') {
-    console.log('json file save start')
     await this.drive.put(hyperdrivePath, data)
   }
 
@@ -331,8 +388,6 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
  HyperspaceWorker.prototype.hyperdriveReadfile = async function (path) {
   // File reads
   const entry = await drive.entry(path)
-  console.log('read one entry')
-  console.log(entry)
   // hyperdrive 10 code
   /* console.log('readdir(/)')
   console.log('  ', await this.drive.promises.readdir('/'))
@@ -349,9 +404,6 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
 *
 */
 HyperspaceWorker.prototype.readCSVfile = async function (fpath, headerSet) {
-  console.log('path in stream csv')
-  console.log(fpath)
-  console.log(headerSet)
   // const rs2 = this.drive.createReadStream(fpath) // 'text/csv/testshed11530500.csv') // '/blob.txt')
   // rs2.pipe(process.stdout) // prints file content
   const rs = this.drive.createReadStream(fpath) // 'text/csv/testshed11530500.csv') // '/blob.txt')
@@ -373,9 +425,7 @@ HyperspaceWorker.prototype.readCSVfile = async function (fpath, headerSet) {
  *
 */
 HyperspaceWorker.prototype.hyperdriveReplicate = async function (type) {
-
   // Swarm on the network
-  console.log('replicate on network started')
   await this.client.replicate(this.drive)
   await new Promise(r => setTimeout(r, 3e3)) // just a few seconds
   await this.client.network.configure(this.drive, {announce: false, lookup: false})
