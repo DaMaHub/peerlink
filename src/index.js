@@ -4,8 +4,6 @@ import { fileURLToPath } from 'url'
 const _dirname = typeof __dirname !== 'undefined'
   ? __dirname
   : dirname(fileURLToPath(import.meta.url))
-// console.log('path')
-// console.log(_dirname)
 import { createServer } from 'https'
 // import { createServer } from 'http'
 import fs from 'fs'
@@ -15,10 +13,8 @@ import uuid from 'uuid'
 import throttledQueue from 'throttled-queue'
 import CaleAi from 'cale-holism'
 import HOP from 'node-safeflow'
-// import KBIDstoreWorker from './hop/kbidStore.js'
 import LibComposer from 'librarycomposer'
 import HyperspaceProtocol from './data/hyperspace.js'
-// import DatastoreWorker from './data/peerStore.js'
 import FileParser from './data/fileParser.js'
 import os from 'os'
 import dotenv from 'dotenv'
@@ -40,11 +36,8 @@ await liveHyperspace.setupHyperbee()
 // await liveHyperspace.setupHyperbee3()
 // await liveHyperspace.saveHyperbeeDB()
 // await liveHyperspace.getHyperbeeDB('key')
-// let peerStoreLive = new DatastoreWorker(localpath) // will remove old what PtoP infrastructure running on?  Safe Network, Hypercore? etc
-// OK with safeFLOW setup then bring peerDatastores to life
-// setupDatastores()  // will remove old
 const liveParser = new FileParser(localpath)
-let liveSafeFLOW = {}
+let liveHOPflow = {}
 let setFlow = false
 let libraryData = {}
 let rateQueue = []
@@ -76,7 +69,7 @@ const wsServer = new WebSocketServer({ server })
 // listenr for data back from ECS
 function peerListeners (ws) {
   // console.log('batch of safeFlowlisterners')
-  liveSafeFLOW = new HOP()
+  liveHOPflow = new HOP()
   setFlow = true
   // callbacks for datastores
   function resultsCallback (entity, err, data) {
@@ -88,45 +81,45 @@ function peerListeners (ws) {
       resultMatch.entity = entity
       resultMatch.data = false
     }
-    liveSafeFLOW.resultsFlow(resultMatch)
+    liveHOPflow.resultsFlow(resultMatch)
   }
 
   // listenr for data back from ECS
-  liveSafeFLOW.on('displayEntity', (data) => {
+  liveHOPflow.on('displayEntity', (data) => {
     data.type = 'newEntity'
     ws.send(JSON.stringify(data))
   })
-  let deCount = liveSafeFLOW.listenerCount('displayEntity')
-  liveSafeFLOW.on('displayEntityRange', (data) => {
+  let deCount = liveHOPflow.listenerCount('displayEntity')
+  liveHOPflow.on('displayEntityRange', (data) => {
     data.type = 'newEntityRange'
     ws.send(JSON.stringify(data))
   })
-  liveSafeFLOW.on('displayUpdateEntity', (data) => {
+  liveHOPflow.on('displayUpdateEntity', (data) => {
     data.type = 'updateEntity'
     ws.send(JSON.stringify(data))
   })
-  liveSafeFLOW.on('displayUpdateEntityRange', (data) => {
+  liveHOPflow.on('displayUpdateEntityRange', (data) => {
     data.type = 'updateEntityRange'
     ws.send(JSON.stringify(data))
   })
-  liveSafeFLOW.on('displayEmpty', (data) => {
+  liveHOPflow.on('displayEmpty', (data) => {
     data.type = 'displayEmpty'
     ws.send(JSON.stringify(data))
   })
-  liveSafeFLOW.on('updateModule', (data) => {
+  liveHOPflow.on('updateModule', async (data) => {
     let moduleRefContract = liveLibrary.liveComposer.moduleComposer(data, 'update')
-    const savedFeedback = liveHyperspace.savePublicLibRefCont(moduleRefContract) // peerStoreLive.peerStoreRefContract(moduleRefContract)
+    const savedFeedback = await liveHyperspace.savePublicLibRefCont(moduleRefContract)
   })
-  liveSafeFLOW.on('storePeerResults', (data) => {
-    const savedFeedback = liveHyperspace.saveHOPresults(data) // peerStoreLive.peerStoreResults(data)
-  })
-
-  liveSafeFLOW.on('checkPeerResults', async (data) => {
-    await liveHyperspace.peerResults(data) // peerStoreLive.peerStoreCheckResults(data, resultsCallback)
+  liveHOPflow.on('storePeerResults', async (data) => {
+    const savedFeedback = await liveHyperspace.saveHOPresults(data)
   })
 
-  liveSafeFLOW.on('kbledgerEntry', (data) => {
-    const savedFeedback = liveHyperspace.saveKBLentry(data) // peerStoreLive.peerKBLentry(data)
+  liveHOPflow.on('checkPeerResults', async (data) => {
+    await liveHyperspace.peerResults(data)
+  })
+
+  liveHOPflow.on('kbledgerEntry', async (data) => {
+    const savedFeedback = await liveHyperspace.saveKBLentry(data)
   })
 }
 // WebSocket server
@@ -266,9 +259,8 @@ wsServer.on('connection', function ws(ws, req) {
     if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'selfauth') {
         // secure connect to safeFLOW
-        // let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+        // let authStatus = await liveHOPflow.networkAuthorisation(o.settings)
         // OK with safeFLOW setup then bring peerDatastores to life
-        // peerStoreLive.setupDatastores()
         // ws.send(JSON.stringify(authStatus))
         peerListeners(ws)
         let authPeer = true
@@ -277,7 +269,7 @@ wsServer.on('connection', function ws(ws, req) {
         // create socketid, token pair
         pairSockTok[ws.id] = tokenString
         pairSockTok[o.data.peer] = tokenString
-        let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+        let authStatus = await liveHOPflow.networkAuthorisation(o.settings)
         // send back JWT
         authStatus.jwt = tokenString
         ws.send(JSON.stringify(authStatus))
@@ -314,7 +306,7 @@ wsServer.on('connection', function ws(ws, req) {
           // create socketid, token pair
           pairSockTok[ws.id] = tokenString
           pairSockTok[o.data.peer] = tokenString
-          let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+          let authStatus = await liveHOPflow.networkAuthorisation(o.settings)
           // send back JWT
           authStatus.jwt = tokenString
           ws.send(JSON.stringify(authStatus))
@@ -363,9 +355,8 @@ wsServer.on('connection', function ws(ws, req) {
       } else if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
         if (o.action === 'auth') {
           // secure connect to safeFLOW
-          let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+          let authStatus = await liveHOPflow.networkAuthorisation(o.settings)
           // OK with safeFLOW setup then bring peerDatastores to life
-          // peerStoreLive.setupDatastores()
           ws.send(JSON.stringify(authStatus))
         } else if (o.action === 'cloudauth') {
           console.log('auth2')
@@ -381,7 +372,7 @@ wsServer.on('connection', function ws(ws, req) {
           }
           if (authPeer === true) {
             // setup safeFLOW
-            let authStatus = await liveSafeFLOW.networkAuthorisation(o.settings)
+            let authStatus = await liveHOPflow.networkAuthorisation(o.settings)
             // send back JWT
             authStatus.jwt = tokenString
             ws.send(JSON.stringify(authStatus))
@@ -393,11 +384,11 @@ wsServer.on('connection', function ws(ws, req) {
             ws.send(JSON.stringify(authFailStatus))
           }
         } else if (o.action === 'dataAPIauth') {
-            let datastoreStatus = await liveSafeFLOW.datastoreAuthorisation(o.settings)
+            let datastoreStatus = await liveHOPflow.datastoreAuthorisation(o.settings)
             // if verified then load starting experiments into ECS-safeFLOW
             ws.send(JSON.stringify(datastoreStatus))
             // check the public network library
-            liveHyperspace.hyperdriveReplicate('peer')
+            await liveHyperspace.hyperdriveReplicate('peer')
             // peerStoreLive.peerRefContractReplicate('peer', callbacklibrary)
         } else if (o.action === 'disconnect') {
           console.log('safelow ws message exit')
@@ -407,26 +398,26 @@ wsServer.on('connection', function ws(ws, req) {
           jwtList.splice(index, 1)
           pairSockTok = {}
           // process.exit(0)
-          liveSafeFLOW = {}
+          liveHOPflow = {}
           setFlow = false
           ws.on('close', ws => {
             console.log('close manual')
             // process.exit(0)
             jwtList = []
             pairSockTok = {}
-            liveSafeFLOW = {}
+            liveHOPflow = {}
             setFlow = false
           })
         } else if (o.action === 'networkexperiment') {
           // send summary info that HOP has received NXP bundle
-          let ecsData = await liveSafeFLOW.startFlow(o.data)
+          let ecsData = await liveHOPflow.startFlow(o.data)
           let summaryECS = {}
           summaryECS.type = 'ecssummary'
           summaryECS.data = ecsData
           ws.send(JSON.stringify(summaryECS))
         } else if (o.action === 'updatenetworkexperiment') {
           // update to existing live ECS entity
-          let ecsDataUpdate = await liveSafeFLOW.startFlow(o.data)
+          let ecsDataUpdate = await liveHOPflow.startFlow(o.data)
         }
       } else if (o.type.trim() === 'library' ) {
         // console.log('library')
@@ -460,6 +451,17 @@ wsServer.on('connection', function ws(ws, req) {
             } else if (o.data.source === 'web') {
               // liveParser.webJSONfile(o, ws)
             }
+        } else if (o.reftype.trim() === 'save-sqlite-file') {
+          console.log('save sqlite file')
+          let fileInfo = await liveHyperspace.hyperdriveFilesave(o.data.type, o.data.name, o.data.path) // await liveHyperspace.hyperdriveFolderFiles(o)
+          let fileFeedback = {}
+          fileFeedback.success = true
+          fileFeedback.path = fileInfo.filename
+          let storeFeedback = {}
+          storeFeedback.type = 'file-save'
+          storeFeedback.action = 'library'
+          storeFeedback.data = fileFeedback
+          ws.send(JSON.stringify(storeFeedback))
         } else if (o.reftype.trim() === 'viewpublickey') {
           // two peer syncing reference contracts
           // const pubkey = liveHyperspace. // peerStoreLive.singlePublicKey('', callbackKey)
@@ -501,7 +503,7 @@ wsServer.on('connection', function ws(ws, req) {
         } else if (o.reftype.trim() === 'datatype') {
           // query peer datastore or save dataatype ref contract
           if (o.action === 'GET') {
-            const datatypeList = await liveHyperspace.getPublicLibrary('datatype')// peerStoreLive.libraryGETRefContracts('datatype', callbacklibrary)
+            const datatypeList = await liveHyperspace.getPublicLibrary('datatype')
           } else {
             // save a new refContract
             const newRefContract = o.refContract
@@ -547,8 +549,6 @@ wsServer.on('connection', function ws(ws, req) {
             // peerStoreLive.peerGETRefContracts('visualise', callback)
           } else {
             // save a new refContract
-            // const savedFeedback = // peerStoreLive.libraryStoreRefContract(o)
-            // ws.send(JSON.stringify(savedFeedback))
             const newRefContract = o.refContract
             let saveFeedback = await liveHyperspace.savePubliclibrary(o)
             ws.send(JSON.stringify(saveFeedback))
@@ -570,7 +570,7 @@ wsServer.on('connection', function ws(ws, req) {
           for (let mh of o.data) {
             const moduleRefContract = liveLibrary.liveComposer.moduleComposer(mh, '')
             const moduleRefContractReady = JSON.stringify(moduleRefContract)
-            const savedFeedback = await liveHyperspace.savePublicLibRefCont(moduleRefContract) // peerStoreLive.libraryStoreRefContract(moduleRefContract)
+            const savedFeedback = await liveHyperspace.savePubliclibrary(moduleRefContract)
             moduleGenesisList.push(savedFeedback.key)
             // stand key value format or query and get back ref contract double check TODO
             let moduleContract = {}
@@ -583,11 +583,12 @@ wsServer.on('connection', function ws(ws, req) {
             // aggregate all modules into exeriment contract
             let genesisRefContract = liveLibrary.liveComposer.experimentComposerGenesis(moduleGenesisList)
             // double check they are created
-            const savedFeedback = await liveHyperspace.savePublicLibRefCont(genesisRefContract) // peerStoreLive.libraryStoreRefContract(genesisRefContract)
+            const savedFeedback = await liveHyperspace.savePubliclibrary(genesisRefContract)
             savedFeedback.expanded = moduleGenesisExpanded
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'joinexperiment') {
+          console.log('start join nxp')
           let moduleJoinedList = []
           let moduleJoinedExpanded = []
           let newModCount = o.data.exp.modules.length
@@ -613,8 +614,10 @@ wsServer.on('connection', function ws(ws, req) {
               peerModules.visualise = mh.value.info.refcont
               peerModules.settings = o.data.options.visualise
             }
+            console.log('modules passed to join')
+            console.log(peerModules)
             let moduleRefContract = liveLibrary.liveComposer.moduleComposer(peerModules, 'join')
-            const savedFeedback = liveHyperspace. // peerStoreLive.peerStoreRefContract(moduleRefContract)
+            const savedFeedback = await liveHyperspace.savePeerLibrary(moduleRefContract)
             moduleJoinedList.push(savedFeedback.key)
             // form key value refcont structure
             let moduleKeyValue = {}
@@ -628,13 +631,15 @@ wsServer.on('connection', function ws(ws, req) {
             // aggregate all modules into exeriment contract
             // double check they are created
             let joinRefContract = liveLibrary.liveComposer.experimentComposerJoin(moduleJoinedList)
-            const savedFeedback = liveHyperspace.savePeerLibrary(joinRefContract) // peerStoreLive.peerStoreRefContract(joinRefContract)
+            const savedFeedback = await liveHyperspace.savePeerLibrary(joinRefContract)
             savedFeedback.expanded = moduleJoinedExpanded
+            console.log('join nxp comlte???')
+            console.log(savedFeedback)
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'genesisexperiment') {
           let genesisRefContract = liveLibrary.liveComposer.experimentComposerGenesis(o.data)
-          const savedFeedback = liveHyperspace.savePeerLibrary(genesisRefContract) // peerStoreLive.libraryStoreRefContract(genesisRefContract)
+          const savedFeedback = await liveHyperspace.savePeerLibrary(genesisRefContract)
           ws.send(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'kbid') {
           // query peer hypertrie for
@@ -679,7 +684,7 @@ wsServer.on('connection', function ws(ws, req) {
             // peerStoreLive.peerGETRefContracts('module', callback)
           } else {
             // save a new refContract
-            const savedFeedback = liveHyperspace.savePeerLibrary(o) // peerStoreLive.libraryStoreRefContract(o)
+            const savedFeedback = liveHyperspace.savePeerLibrary(o)
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'moduletemp') {
@@ -701,7 +706,7 @@ wsServer.on('connection', function ws(ws, req) {
           ws.send(JSON.stringify(moduleTempData))
         } else if (o.reftype.trim() === 'newmodules') {
           let moduleRefContract = liveLibrary.liveComposer.moduleComposer(o.data, 'join')
-          const savedFeedback = liveHyperspace.savePeerLibrary(moduleRefContract) // peerStoreLive.libraryStoreRefContract(moduleRefContract)
+          const savedFeedback = liveHyperspace.savePeerLibrary(moduleRefContract)
           ws.send(JSON.stringify(savedFeedback))
         } else if (o.reftype.trim() === 'newlifeboard') {
           let lifeboardRefContract = liveLibrary.liveComposer.lifeboardComposer(o.data, 'new')
@@ -740,7 +745,7 @@ wsServer.on('connection', function ws(ws, req) {
     console.log('close ws direct')
     jwtList = []
     pairSockTok = {}
-    liveSafeFLOW = {}
+    liveHOPflow = {}
     setFlow = false
     // process.exit(0)
   })

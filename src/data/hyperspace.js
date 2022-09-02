@@ -6,6 +6,7 @@ import Corestore from 'corestore'
 import Hyperdrive from 'hyperdrive'
 import Hyperbee from 'hyperbee'
 import Fileparser from './fileParser.js'
+import os from 'os'
 import fs from 'fs'
 import util from 'util'
 import events from 'events'
@@ -84,7 +85,7 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
  */
  HyperspaceWorker.prototype.setupHyperdrive = async function () {
   // Create a Hyperdrive
-  const corestore = new Corestore('storage')
+  const corestore = new Corestore(os.homedir() + '/.hyperspace/storagedrive')
   this.drive = new Hyperdrive(corestore, null)
   await this.drive.ready()
   console.log('New drive created, key:')
