@@ -68,11 +68,11 @@ const wsServer = new WebSocketServer({ server })
 
 // listenr for data back from ECS
 function peerListeners (ws) {
-  // console.log('batch of safeFlowlisterners')
-  liveHOPflow = new HOP()
+  // console.log('batch of HOP listeners')
+  liveHOPflow = new HOP(liveHyperspace)
   setFlow = true
   // callbacks for datastores
-  function resultsCallback (entity, err, data) {
+  function resultsCallback (entity, data) {
     let resultMatch = {}
     if (data !== null) {
       resultMatch.entity = entity
@@ -111,11 +111,13 @@ function peerListeners (ws) {
     const savedFeedback = await liveHyperspace.savePublicLibRefCont(moduleRefContract)
   })
   liveHOPflow.on('storePeerResults', async (data) => {
-    const savedFeedback = await liveHyperspace.saveHOPresults(data)
+    const checkResults = await liveHyperspace.saveHOPresults(data)
   })
 
   liveHOPflow.on('checkPeerResults', async (data) => {
-    await liveHyperspace.peerResults(data)
+    console.log('start check resultas dataAPI')
+    const checkResults = await liveHyperspace.peerResults(data)
+    resultsCallback(data, checkResults)
   })
 
   liveHOPflow.on('kbledgerEntry', async (data) => {
@@ -134,7 +136,7 @@ wsServer.on('connection', function ws(ws, req) {
 
   ws.on('message', async msg => {
     // which socket id?
-    // console.log('messageIN')
+    console.log('messageIN')
 
     function callbackKey (data) {
       let pubkeyData = {}
@@ -253,8 +255,8 @@ wsServer.on('connection', function ws(ws, req) {
     }
     // logic for incoming request flows
     const o = JSON.parse(msg)
-    // console.log('peer link IN message')
-    // console.log(o)
+    console.log('peer link IN message')
+    console.log(o)
     // first check if firstime connect
     if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'selfauth') {
@@ -334,7 +336,8 @@ wsServer.on('connection', function ws(ws, req) {
         ws.send(JSON.stringify(authFailStatus)) */
       }
     }
-
+    console.log('token status')
+    console.log(jwtStatus)
     if (jwtStatus === true) {
       if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
         if (o.action === 'question') {
@@ -409,6 +412,7 @@ wsServer.on('connection', function ws(ws, req) {
             setFlow = false
           })
         } else if (o.action === 'networkexperiment') {
+          console.log('start HOP for an NXP')
           // send summary info that HOP has received NXP bundle
           let ecsData = await liveHOPflow.startFlow(o.data)
           let summaryECS = {}
@@ -453,7 +457,7 @@ wsServer.on('connection', function ws(ws, req) {
             }
         } else if (o.reftype.trim() === 'save-sqlite-file') {
           console.log('save sqlite file')
-          let fileInfo = await liveHyperspace.hyperdriveFilesave(o.data.type, o.data.name, o.data.path) // await liveHyperspace.hyperdriveFolderFiles(o)
+          let fileInfo = await liveHyperspace.hyperdriveFilesave(o.data.type, o.data.name, o.data.path)
           let fileFeedback = {}
           fileFeedback.success = true
           fileFeedback.path = fileInfo.filename
