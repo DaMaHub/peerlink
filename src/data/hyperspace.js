@@ -198,7 +198,7 @@ HyperspaceWorker.prototype.saveKBLentry = async function (refContract) {
 *
 */
 HyperspaceWorker.prototype.saveHOPresults = async function (refContract) {
-  await this.dbHOPresults.put(refContract.hash, refContract.contract)
+  await this.dbHOPresults.put(refContract.hash, refContract.data)
 }
 
  /**
@@ -371,12 +371,19 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
   fs.writeFileSync('data.csv', buffer)
   if (path === 'text/csv') {
     await this.drive.put(hyperdrivePath, fs.readFileSync('data.csv', 'utf-8'))
-    // hyperdrive 10 code
-    // await this.drive.promises.writeFile(hyperdrivePath , data)
-    // await this.drive.promises.writeFile('/stuff/file2.bin', Buffer.from([0,1,2,4]))
+    // now remove the temp file for converstion
+    fs.unlink('data.csv', (err => {
+      if (err) console.log(err);
+      else {
+        console.log('file deleted');
+      }
+    }))
   } else if (path === 'json') {
     await this.drive.put(hyperdrivePath, data)
+  } else if (path === 'sqlite') {
+    await this.drive.put(hyperdrivePath, data)
   }
+
 
   return hyperdrivePath
 }
@@ -388,16 +395,29 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
  */
  HyperspaceWorker.prototype.hyperdriveReadfile = async function (path) {
   // File reads
-  const entry = await drive.entry(path)
-  // hyperdrive 10 code
-  /* console.log('readdir(/)')
-  console.log('  ', await this.drive.promises.readdir('/'))
-  console.log('readFile(/file1.txt, utf8)')
-  console.log('  ', await this.drive.promises.readFile('/file1.txt', 'utf8'))
-  console.log('readFile(/stuff/file2.bin, hex)')
-  console.log('  ', await this.drive.promises.readFile('/stuff/file2.bin', 'hex')) */
+  const entry = await this.drive.get(path)
+  entry.on('data',  function(chunk) {
+  })
   return true
 }
+
+/**
+ * rebuidl file and give directory location
+ * @method hyperdriveLocalfile
+ *
+ */
+ HyperspaceWorker.prototype.hyperdriveLocalfile = async function (path) {
+  // File reads to buffer and recreate file
+  // const bufFromGet2 = await this.drive.get(path)
+  const { value: entry } = await this.drive.entry(path)
+  const blobs = await this.drive.getBlobs()
+  const bufFromEntry = await blobs.get(entry.blob)
+
+  let localFile = 'localdb'
+  // fs.writeFileSync(localFile, bufFromGet2)
+  fs.writeFileSync(localFile, bufFromEntry)
+  return localFile
+ }
 
 /**
 *  taken in csv file and read per line

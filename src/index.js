@@ -108,7 +108,7 @@ function peerListeners (ws) {
   })
   liveHOPflow.on('updateModule', async (data) => {
     let moduleRefContract = liveLibrary.liveComposer.moduleComposer(data, 'update')
-    const savedFeedback = await liveHyperspace.savePublicLibRefCont(moduleRefContract)
+    const savedFeedback = await liveHyperspace.savePubliclibrary(moduleRefContract)
   })
   liveHOPflow.on('storePeerResults', async (data) => {
     const checkResults = await liveHyperspace.saveHOPresults(data)
@@ -255,8 +255,8 @@ wsServer.on('connection', function ws(ws, req) {
     }
     // logic for incoming request flows
     const o = JSON.parse(msg)
-    console.log('peer link IN message')
-    console.log(o)
+    // console.log('peer link IN message')
+    // console.log(o)
     // first check if firstime connect
     if (o.reftype.trim() === 'ignore' && o.type.trim() === 'safeflow' ) {
       if (o.action === 'selfauth') {
@@ -299,7 +299,6 @@ wsServer.on('connection', function ws(ws, req) {
         if (authPeer === true && alreadyConnect === undefined) {
           // setup safeFLOW
           if (setFlow === false && alreadyConnect === undefined) {
-            console.log('activate listeners')
             peerListeners(ws)
           }
           // form token  (need to upgrade proper JWT)
@@ -336,8 +335,8 @@ wsServer.on('connection', function ws(ws, req) {
         ws.send(JSON.stringify(authFailStatus)) */
       }
     }
-    console.log('token status')
-    console.log(jwtStatus)
+    // console.log('token status')
+    // console.log(jwtStatus)
     if (jwtStatus === true) {
       if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
         if (o.action === 'question') {
@@ -412,7 +411,6 @@ wsServer.on('connection', function ws(ws, req) {
             setFlow = false
           })
         } else if (o.action === 'networkexperiment') {
-          console.log('start HOP for an NXP')
           // send summary info that HOP has received NXP bundle
           let ecsData = await liveHOPflow.startFlow(o.data)
           let summaryECS = {}
@@ -456,7 +454,6 @@ wsServer.on('connection', function ws(ws, req) {
               // liveParser.webJSONfile(o, ws)
             }
         } else if (o.reftype.trim() === 'save-sqlite-file') {
-          console.log('save sqlite file')
           let fileInfo = await liveHyperspace.hyperdriveFilesave(o.data.type, o.data.name, o.data.path)
           let fileFeedback = {}
           fileFeedback.success = true
@@ -592,7 +589,6 @@ wsServer.on('connection', function ws(ws, req) {
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'joinexperiment') {
-          console.log('start join nxp')
           let moduleJoinedList = []
           let moduleJoinedExpanded = []
           let newModCount = o.data.exp.modules.length
@@ -618,8 +614,6 @@ wsServer.on('connection', function ws(ws, req) {
               peerModules.visualise = mh.value.info.refcont
               peerModules.settings = o.data.options.visualise
             }
-            console.log('modules passed to join')
-            console.log(peerModules)
             let moduleRefContract = liveLibrary.liveComposer.moduleComposer(peerModules, 'join')
             const savedFeedback = await liveHyperspace.savePeerLibrary(moduleRefContract)
             moduleJoinedList.push(savedFeedback.key)
@@ -637,8 +631,6 @@ wsServer.on('connection', function ws(ws, req) {
             let joinRefContract = liveLibrary.liveComposer.experimentComposerJoin(moduleJoinedList)
             const savedFeedback = await liveHyperspace.savePeerLibrary(joinRefContract)
             savedFeedback.expanded = moduleJoinedExpanded
-            console.log('join nxp comlte???')
-            console.log(savedFeedback)
             ws.send(JSON.stringify(savedFeedback))
           }
         } else if (o.reftype.trim() === 'genesisexperiment') {
