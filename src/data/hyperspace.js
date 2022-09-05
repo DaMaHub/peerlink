@@ -375,13 +375,22 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
     fs.unlink('data.csv', (err => {
       if (err) console.log(err);
       else {
-        console.log('file deleted');
+        console.log('file deleted csv');
       }
     }))
   } else if (path === 'json') {
     await this.drive.put(hyperdrivePath, data)
   } else if (path === 'sqlite') {
-    await this.drive.put(hyperdrivePath, data)
+    var dataUrl = data.split(",")[1]
+    var buffer = Buffer.from(dataUrl, 'base64')
+    fs.writeFileSync('tempsql.db', buffer)
+    await this.drive.put(hyperdrivePath, fs.readFileSync('tempsql.db'))
+    fs.unlink('tempsql.db', (err => {
+      if (err) console.log(err);
+      else {
+        console.log('file deleted temp sqlite');
+      }
+    }))
   }
 
 

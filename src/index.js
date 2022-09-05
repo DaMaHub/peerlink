@@ -115,7 +115,6 @@ function peerListeners (ws) {
   })
 
   liveHOPflow.on('checkPeerResults', async (data) => {
-    console.log('start check resultas dataAPI')
     const checkResults = await liveHyperspace.peerResults(data)
     resultsCallback(data, checkResults)
   })
@@ -136,8 +135,7 @@ wsServer.on('connection', function ws(ws, req) {
 
   ws.on('message', async msg => {
     // which socket id?
-    console.log('messageIN')
-
+    // console.log('messageIN')
     function callbackKey (data) {
       let pubkeyData = {}
       pubkeyData.type = 'publickey'
