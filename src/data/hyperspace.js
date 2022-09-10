@@ -201,6 +201,16 @@ HyperspaceWorker.prototype.saveHOPresults = async function (refContract) {
   await this.dbHOPresults.put(refContract.hash, refContract.data)
 }
 
+/**
+* save space layout of bentobox
+* @method saveBentospace
+*
+*/
+HyperspaceWorker.prototype.saveBentospace = async function (spaceContract) {
+  let key = 'startbentospaces'
+  await this.dbBentospaces.put(key, spaceContract)
+}
+ 
  /**
  * get data for keystore db
  * @method getHyperbeeDB
@@ -210,6 +220,17 @@ HyperspaceWorker.prototype.getHyperbeeDB = async function (refchash) {
   // if you want to query the feed
   const nodeData = await this.dbbee3.get(refchash)
 
+}
+
+/**
+* lookup peer bentospace layout default
+* @method getBentospace
+*
+*/
+HyperspaceWorker.prototype.getBentospace = async function () {
+  let key = 'startbentospaces'
+  const nodeData = await this.dbBentospaces.get(key)
+  return nodeData
 }
 
 /**

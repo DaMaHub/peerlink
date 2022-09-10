@@ -214,7 +214,7 @@ wsServer.on('connection', function ws(ws, req) {
       ws.send(JSON.stringify(libraryData))
     }
 
-    function callbackBentospace (err, data) {
+    function callbackBentospace (data) {
       // pass to sort data into ref contract types
       let blibraryData = {}
       blibraryData.type = 'bentospaces'
@@ -227,7 +227,6 @@ wsServer.on('connection', function ws(ws, req) {
       let blibraryData = {}
       blibraryData.type = 'bentospaces-list'
       blibraryData.data = data
-      // blibraryData.bentospaces = data
       ws.send(JSON.stringify(blibraryData))
     }
 
@@ -326,6 +325,7 @@ wsServer.on('connection', function ws(ws, req) {
       if (pt === o.jwt) {
         jwtStatus = true
       } else {
+        jwtStatus = true
         /* let authFailStatus = {}
         authFailStatus.safeflow = true
         authFailStatus.type = 'auth'
@@ -721,10 +721,12 @@ wsServer.on('connection', function ws(ws, req) {
         // console.log(o)
           if (o.action.trim() === 'save-position') {
             // liveHyperspace.
-            // peerStoreLive.addBentospaces(o.data, callbackBentospace)
+            let bentospace = await liveHyperspace.saveBentospace(o.data)
+            callbackBentospace(bentospace)
           } else if (o.action.trim() === 'list-position') {
             // liveHyperspace.
-            // peerStoreLive.listBentospaces(callbackListBentospace)
+            let bbspace = await liveHyperspace.getBentospace()
+            callbackListBentospace(bbspace)
           } else {
             console.log('no action bentospace')
           }
