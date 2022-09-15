@@ -330,6 +330,31 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
 }
 
 /**
+ * delete nxp ref contract from peer library
+ * @method deleteRefcontPeerlibrary
+ *
+ */
+ HyperspaceWorker.prototype.deleteRefcontPeerlibrary = async function (nxpID) {
+  console.log('delecotnra id')
+  console.log(nxpID)
+  let deleteStatus = await this.dbPeerLibrary.del(nxpID)
+  return deleteStatus
+ }
+
+/**
+ * delete nxp ref contract from peer library
+ * @method deleteBentospace
+ *
+ */
+ HyperspaceWorker.prototype.deleteBentospace = async function (nxpID) {
+  console.log('delecotnra id')
+  console.log(nxpID)
+  let key = 'startbentospaces'
+  const nodeData = await this.dbBentospaces.del(key)
+  return deleteStatus
+ }
+
+/**
  * hyperdrive stream write
  * @method hyperdriveWritestream 
  *
