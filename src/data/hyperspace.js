@@ -337,8 +337,11 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
  HyperspaceWorker.prototype.deleteRefcontPeerlibrary = async function (nxpID) {
   console.log('delecotnra id')
   console.log(nxpID)
+  let deleteInfo = {}
   let deleteStatus = await this.dbPeerLibrary.del(nxpID)
-  return deleteStatus
+  deleteInfo.success = deleteStatus
+  deleteInfo.nxp = nxpID
+  return deleteInfo
  }
 
 /**

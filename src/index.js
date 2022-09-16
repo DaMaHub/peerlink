@@ -230,9 +230,10 @@ wsServer.on('connection', function ws(ws, req) {
       ws.send(JSON.stringify(blibraryData))
     }
 
-    function callbackPeerDelete(data) {
+    function callbackNXPDelete(data) {
       // pass to sort data into ref contract types
       console.log('peerprivate delete')
+      console.log(data)
       let libraryData = {}
       libraryData.data = data
       libraryData.type = 'peerprivatedelete'
@@ -499,10 +500,10 @@ wsServer.on('connection', function ws(ws, req) {
         } else if (o.reftype.trim() === 'privatelibrary') {
           let contractData = await liveHyperspace.getPeerLibraryRange()
           callbackPeerLib(contractData)
-        } else if (o.reftype.trim() === 'removepeer') {
+        } else if (o.reftype.trim() === 'remove-nxp') {
           console.log('remove nxp from start ')
           let removeNXPdashboard = await liveHyperspace.deleteRefcontPeerlibrary(o.data)
-          callbackPeerDelete(removeNXPdashboard)
+          callbackNXPDelete(removeNXPdashboard)
         } else if (o.reftype.trim() === 'datatype') {
           // query peer datastore or save dataatype ref contract
           if (o.action === 'GET') {
