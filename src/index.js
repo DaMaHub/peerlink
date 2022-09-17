@@ -405,7 +405,7 @@ wsServer.on('connection', function ws(ws, req) {
           setFlow = false
           ws.on('close', ws => {
             console.log('close manual')
-            // process.exit(0)
+            process.exit(0)
             jwtList = []
             pairSockTok = {}
             liveHOPflow = {}
@@ -748,7 +748,7 @@ wsServer.on('connection', function ws(ws, req) {
     pairSockTok = {}
     liveHOPflow = {}
     setFlow = false
-    // process.exit(0)
+    process.exit(0)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')
