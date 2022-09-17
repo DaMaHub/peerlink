@@ -90,6 +90,7 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   await this.drive.ready()
   console.log('New drive created, key:')
   console.log('  ', this.drive.key.toString('hex'))
+  return this.drive.key.toString('hex')
  }
 
 /**
@@ -98,7 +99,7 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
  *
  */
  HyperspaceWorker.prototype.setupHyperbee = async function () {
-   
+  let beePubkeys = []
   const store = this.client.corestore('peerspace-hyperbee')
 
   const core = store.get({ name: 'publiclibrary' })
@@ -106,8 +107,8 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
     keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
     valueEncoding: 'json' // same options as above
   })
-  
   await this.dbPublicLibrary.ready()
+  beePubkeys.push({'pubilclibrary': this.dbPublicLibrary._feed.key.toString('hex')})
   // console.log(this.dbPublicLibrary._feed)
 
   const core2 = store.get({ name: 'peerlibrary' })
@@ -115,40 +116,42 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
     keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
     valueEncoding: 'json' // same options as above
   })
-  
   await this.dbPeerLibrary.ready()
+  beePubkeys.push({'peerlibrary': this.dbPeerLibrary._feed.key.toString('hex')})
 
   const core6 = store.get({ name: 'peers' })
   this.dbPeers = new Hyperbee(core6, {
     keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
     valueEncoding: 'json' // same options as above
   })
-  
   await this.dbPeers.ready()
+  beePubkeys.push({'peers': this.dbPeers._feed.key.toString('hex')})
 
   const core3 = store.get({ name: 'bentospaces' })
   this.dbBentospaces = new Hyperbee(core3, {
     keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
     valueEncoding: 'json' // same options as above
   })
-  
   await this.dbBentospaces.ready()
+  beePubkeys.push({'bentospaces': this.dbBentospaces._feed.key.toString('hex')})
 
   const core4 = store.get({ name: 'hopresults' })
   this.dbHOPresults = new Hyperbee(core4, {
     keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
     valueEncoding: 'json' // same options as above
   })
-  
   await this.dbHOPresults.ready()
+  beePubkeys.push({'hopresults': this.dbHOPresults._feed.key.toString('hex')})
 
   const core5 = store.get({ name: 'kbledger' })
   this.dbKBledger = new Hyperbee(core5, {
     keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
     valueEncoding: 'json' // same options as above
   })
-  
   await this.dbKBledger.ready()
+  beePubkeys.push({'kbledger': this.dbKBledger._feed.key.toString('hex')})
+
+  return beePubkeys
 }
 
  /**

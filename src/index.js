@@ -26,16 +26,6 @@ let pairSockTok = {}
 const liveCALEAI = new CaleAi()
 const liveLibrary = new LibComposer()
 const liveHyperspace = new HyperspaceProtocol()
-await liveHyperspace.startHyperspace()
-// await liveHyperspace.clearcloseHyperspace()
-await liveHyperspace.setupHyperdrive()
-// await liveHyperspace.hyperdriveWritestream()
-// await liveHyperspace.hyperdriveFolderFiles()
-// await liveHyperspace.hyperdriveReplicate()
-await liveHyperspace.setupHyperbee()
-// await liveHyperspace.setupHyperbee3()
-// await liveHyperspace.saveHyperbeeDB()
-// await liveHyperspace.getHyperbeeDB('key')
 const liveParser = new FileParser(localpath)
 let liveHOPflow = {}
 let setFlow = false
@@ -67,9 +57,27 @@ server.listen(9888, () => {
 const wsServer = new WebSocketServer({ server })
 
 // listenr for data back from ECS
-function peerListeners (ws) {
+async function peerListeners (ws) {
   // console.log('batch of HOP listeners')
   liveHOPflow = new HOP(liveHyperspace)
+  await liveHyperspace.startHyperspace()
+  // await liveHyperspace.clearcloseHyperspace()
+  let startHyperdrive = await liveHyperspace.setupHyperdrive()
+  let startDrivePubkey = {}
+  startDrivePubkey.type = 'hyperdrive-pubkey'
+  startDrivePubkey.data = startHyperdrive
+  ws.send(JSON.stringify(startDrivePubkey))
+  // await liveHyperspace.hyperdriveWritestream()
+  // await liveHyperspace.hyperdriveFolderFiles()
+  // await liveHyperspace.hyperdriveReplicate()
+  let startHyperbee = await liveHyperspace.setupHyperbee()
+  let startBeePubkey = {}
+  startBeePubkey.type = 'hyperbee-pubkeys'
+  startBeePubkey.data = startHyperbee
+  ws.send(JSON.stringify(startBeePubkey))
+  // await liveHyperspace.setupHyperbee3()
+  // await liveHyperspace.saveHyperbeeDB()
+  // await liveHyperspace.getHyperbeeDB('key')
   setFlow = true
   // callbacks for datastores
   function resultsCallback (entity, data) {
@@ -264,7 +272,7 @@ wsServer.on('connection', function ws(ws, req) {
         // let authStatus = await liveHOPflow.networkAuthorisation(o.settings)
         // OK with safeFLOW setup then bring peerDatastores to life
         // ws.send(JSON.stringify(authStatus))
-        peerListeners(ws)
+        await peerListeners(ws)
         let authPeer = true
         let tokenString = crypto.randomBytes(64).toString('hex')
         jwtList.push(tokenString)
@@ -299,7 +307,7 @@ wsServer.on('connection', function ws(ws, req) {
         if (authPeer === true && alreadyConnect === undefined) {
           // setup safeFLOW
           if (setFlow === false && alreadyConnect === undefined) {
-            peerListeners(ws)
+            await peerListeners(ws)
           }
           // form token  (need to upgrade proper JWT)
           let tokenString = crypto.randomBytes(64).toString('hex')
