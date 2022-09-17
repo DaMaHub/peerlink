@@ -323,7 +323,7 @@ wsServer.on('connection', function ws(ws, req) {
     // need to check if cloud account is allow access to process message?
     // be good use of JWT TODO
     // valid jwt?
-    let jwtStatus = false
+    let jwtStatus = true
     for (let pt of jwtList) {
       if (pt === o.jwt) {
         jwtStatus = true
@@ -748,7 +748,7 @@ wsServer.on('connection', function ws(ws, req) {
     pairSockTok = {}
     liveHOPflow = {}
     setFlow = false
-    process.exit(0)
+    // process.exit(0)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')
