@@ -374,7 +374,6 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
     keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
     valueEncoding: 'json' // same options as above
   })
-  await this.dbPublicLibraryTemp.ready()
   await this.client.replicate(this.dbPublicLibraryTemp.feed) // fetch from the network
   await this.dbPublicLibraryTemp.ready()
   // console.log('value for key')
@@ -390,8 +389,55 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
 HyperspaceWorker.prototype.getReplicatePublicLibrary = async function (nxp) {
   console.log('temp public library get info from peer replicate')
   console.log(nxp)
-  const peerRepData = await this.dbPublicLibraryTemp.get()
-  return peerRepData
+  // const peerRepData = await this.dbPublicLibraryTemp.get()
+  const peerRepData = await this.dbPublicLibraryTemp.createReadStream()
+  let contractData = []
+  for await (const { key, value } of peerRepData) {
+    contractData.push({ key, value })
+  }
+  return contractData
+}
+
+
+/**
+* take nxp id from temporary pubic network library and add to peers public library
+* @method publicLibraryAddentry
+*
+*/
+HyperspaceWorker.prototype.publicLibraryAddentry = async function (nxp) {
+  console.log('add entry from nl2')
+  console.log(nxp)
+  const localthis = this
+  // this.datastoreNL2.get(nxp.nxpID, console.log)
+  const refContract = await this.dbPublicLibraryTemp.get(nxp.nxpID)
+    // need to look up individual module contracts and copy them across
+  for (let mod of refContract.value.modules) {
+    // more hypertie get queries and saving
+    const modRefContract = await localthis.dbPublicLibraryTemp.get(mod)
+      if (modRefContract.value.info.moduleinfo.name === 'visualise') {
+        // what are the datatypes?
+        let datatypeList = []
+        datatypeList.push(modRefContract.value.info.option.settings.xaxis)
+        datatypeList = [...datatypeList, ...modRefContract.value.info.option.settings.yaxis]
+        for (let dtref of datatypeList) {
+          console.log('dt list')
+          console.log(dtref)
+          const tempRC = await localthis.dbPublicLibraryTemp.get(dtref)
+          const saveReprc = await localthis.dbPublicLibrary.put(tempRC.key, tempRC.value)
+          // return saveReprc
+        }
+      }
+      // need to get the underlying ref contract for module type e.g data, compute, vis
+      if (modRefContract.value.info.refcont) {
+        const tempRC = await localthis.dbPublicLibraryTemp.get(modRefContract.value.info.refcont)
+        const saveRC = await  localthis.dbPublicLibrary.put(tempRC.key, tempRC.value)
+        // return saveRC
+      }
+      const saveRClib = await localthis.dbPublicLibrary.put(modRefContract.key, modRefContract.value)
+      // return saveRClib
+      const savePublibrc = await localthis.dbPublicLibrary.put(refContract.key, refContract.value)
+      return savePublibrc
+    }
 }
 
 /**

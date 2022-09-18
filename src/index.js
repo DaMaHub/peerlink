@@ -183,7 +183,7 @@ wsServer.on('connection', function ws(ws, req) {
       ws.send(JSON.stringify(libraryData))
     }
 
-    function callbackPlibraryAdd (err, data) {
+    function callbackPlibraryAdd (data) {
       let libraryData = {}
       libraryData.data = data
       libraryData.type = 'publiclibraryaddcomplete'
@@ -488,8 +488,8 @@ wsServer.on('connection', function ws(ws, req) {
           // peerStoreLive.listWarmPeers(callbackWarmPeers, callbacklibrary)
         } else if (o.reftype.trim() === 'addpubliclibraryentry') {
           // take the ID of nxp selected to added to peers own public library
-          // liveHyperspace.
-          // peerStoreLive.publicLibraryAddentry(o.data, callbackPlibraryAdd)
+          let addPubRefc = await liveHyperspace.publicLibraryAddentry(o.data)
+          callbackPlibraryAdd(addPubRefc)
         } else if (o.reftype.trim() === 'removetemppubliclibrary') {
           // remove temp peers friends library
           // liveHyperspace.
