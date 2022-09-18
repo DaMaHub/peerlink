@@ -190,7 +190,7 @@ wsServer.on('connection', function ws(ws, req) {
       ws.send(JSON.stringify(libraryData))
     }
 
-    function callbackReplicatelibrary (err, data) {
+    function callbackReplicatelibrary (data) {
       // pass to sort data into ref contract types
       libraryData.data = 'contracts'
       libraryData.type = 'replicatedata-publiclibrary'
@@ -495,11 +495,14 @@ wsServer.on('connection', function ws(ws, req) {
           // liveHyperspace.
           // peerStoreLive.publicLibraryRemoveTempNL(o.data, 'temp')
         } else if (o.reftype.trim() === 'replicatekey') {
-          // two peer syncing reference contracts
-          // const replicateStore = liveHyperspace. // peerStoreLive.publicLibraryReceive(o.publickey, callbackReplicatereceive)
+          // two peer syncing public reference contracts
+          let repData = await liveHyperspace.replicatePubliclibrary(o.publickey)
+          callbackReplicatereceive(repData)
         } else if (o.reftype.trim() === 'view-replicatelibrary') {
-          // read the replicate library
-          // peerStoreLive.libraryGETReplicateLibrary(o.publickey, callbackReplicatelibrary)
+          let repDataState = await liveHyperspace.replicatePubliclibrary(o.publickey)
+          callbackReplicatereceive(repDataState)
+          let repData = await liveHyperspace.getReplicatePublicLibrary(o.publickey)
+          callbackReplicatelibrary(repData)
         } else if (o.reftype.trim() === 'publiclibrary') {
           // await liveHyperspace.getPublicLibrary('contracthash')
           let publibData = await liveHyperspace.getPublicLibraryRange()
@@ -756,7 +759,7 @@ wsServer.on('connection', function ws(ws, req) {
     pairSockTok = {}
     liveHOPflow = {}
     setFlow = false
-    // process.exit(0)
+    process.exit(0)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')

@@ -24,6 +24,7 @@ var HyperspaceWorker = function () {
   this.dbBentospaces = {}
   this.dbHOPresults = {}
   this.dbKBledger = {}
+  this.dbPublicLibraryTemp = {}
   this.fileUtility = new Fileparser('')
   console.log('{in-hyperspace}')
 }
@@ -353,12 +354,45 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
  *
  */
  HyperspaceWorker.prototype.deleteBentospace = async function (nxpID) {
-  console.log('delecotnra id')
-  console.log(nxpID)
   let key = 'startbentospaces'
-  const nodeData = await this.dbBentospaces.del(key)
+  const deleteStatus = await this.dbBentospaces.del(key)
   return deleteStatus
  }
+
+/**
+ * repicate the publiclibrary peer to peer
+ * @method replicatePubliclibrary
+ *
+ */
+ HyperspaceWorker.prototype.replicatePubliclibrary = async function (key) {
+  console.log('key to repilicate')
+  console.log(key)
+  // key = '3ec0f3b78a0cfe574c4be89b1d703a65f018c0b73ad77e52ac65645d8f51676a'
+  const store = this.client.corestore('peerspace-hyperbeetemp')
+  const core = store.get(key)
+  this.dbPublicLibraryTemp = new Hyperbee(core, {
+    keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
+    valueEncoding: 'json' // same options as above
+  })
+  await this.dbPublicLibraryTemp.ready()
+  await this.client.replicate(this.dbPublicLibraryTemp.feed) // fetch from the network
+  await this.dbPublicLibraryTemp.ready()
+  // console.log('value for key')
+  // console.log(await this.dbPublicLibraryTemp.get('key'))
+  return { replicate: true }
+ }
+
+ /**
+* get the network library reference contracts - all for now replicate source
+* @method getReplicatePublicLibrary
+*
+*/
+HyperspaceWorker.prototype.getReplicatePublicLibrary = async function (nxp) {
+  console.log('temp public library get info from peer replicate')
+  console.log(nxp)
+  const peerRepData = await this.dbHOPresults.get()
+  return peerRepData
+}
 
 /**
  * hyperdrive stream write
