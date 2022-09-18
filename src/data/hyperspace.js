@@ -408,7 +408,6 @@ HyperspaceWorker.prototype.publicLibraryAddentry = async function (nxp) {
   console.log('add entry from nl2')
   console.log(nxp)
   const localthis = this
-  // this.datastoreNL2.get(nxp.nxpID, console.log)
   const refContract = await this.dbPublicLibraryTemp.get(nxp.nxpID)
     // need to look up individual module contracts and copy them across
   for (let mod of refContract.value.modules) {
@@ -420,11 +419,11 @@ HyperspaceWorker.prototype.publicLibraryAddentry = async function (nxp) {
         datatypeList.push(modRefContract.value.info.option.settings.xaxis)
         datatypeList = [...datatypeList, ...modRefContract.value.info.option.settings.yaxis]
         for (let dtref of datatypeList) {
-          console.log('dt list')
-          console.log(dtref)
-          const tempRC = await localthis.dbPublicLibraryTemp.get(dtref)
-          const saveReprc = await localthis.dbPublicLibrary.put(tempRC.key, tempRC.value)
-          // return saveReprc
+          if (dtref !== null) {
+            const tempRC = await localthis.dbPublicLibraryTemp.get(dtref)
+            const saveReprc = await localthis.dbPublicLibrary.put(tempRC.key, tempRC.value)
+            // return saveReprc
+          }
         }
       }
       // need to get the underlying ref contract for module type e.g data, compute, vis
@@ -433,11 +432,11 @@ HyperspaceWorker.prototype.publicLibraryAddentry = async function (nxp) {
         const saveRC = await  localthis.dbPublicLibrary.put(tempRC.key, tempRC.value)
         // return saveRC
       }
-      const saveRClib = await localthis.dbPublicLibrary.put(modRefContract.key, modRefContract.value)
-      // return saveRClib
-      const savePublibrc = await localthis.dbPublicLibrary.put(refContract.key, refContract.value)
-      return savePublibrc
-    }
+    const saveRClib = await localthis.dbPublicLibrary.put(modRefContract.key, modRefContract.value)
+    // return saveRClib
+    const savePublibrc = await localthis.dbPublicLibrary.put(refContract.key, refContract.value)
+    // return savePublibrc
+  }
 }
 
 /**
