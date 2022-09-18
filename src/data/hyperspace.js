@@ -390,7 +390,7 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
 HyperspaceWorker.prototype.getReplicatePublicLibrary = async function (nxp) {
   console.log('temp public library get info from peer replicate')
   console.log(nxp)
-  const peerRepData = await this.dbHOPresults.get()
+  const peerRepData = await this.dbPublicLibraryTemp.get()
   return peerRepData
 }
 
