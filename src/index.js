@@ -496,11 +496,9 @@ wsServer.on('connection', function ws(ws, req) {
           // peerStoreLive.publicLibraryRemoveTempNL(o.data, 'temp')
         } else if (o.reftype.trim() === 'replicatekey') {
           // two peer syncing public reference contracts
-          let repData = await liveHyperspace.replicatePubliclibrary(o.publickey)
-          callbackReplicatereceive(repData)
+          let repDataStatus = await liveHyperspace.replicatePubliclibrary(o.publickey)
+          callbackReplicatereceive(repDataStatus)
         } else if (o.reftype.trim() === 'view-replicatelibrary') {
-          let repDataState = await liveHyperspace.replicatePubliclibrary(o.publickey)
-          callbackReplicatereceive(repDataState)
           let repData = await liveHyperspace.getReplicatePublicLibrary(o.publickey)
           callbackReplicatelibrary(repData)
         } else if (o.reftype.trim() === 'publiclibrary') {
