@@ -88,9 +88,12 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   // Create a Hyperdrive
   const corestore = new Corestore(os.homedir() + '/.hyperspace/storagedrive')
   this.drive = new Hyperdrive(corestore, null)
+  // await this.client.replicate(this.drive)
   await this.drive.ready()
-  console.log('New drive created, key:')
-  console.log('  ', this.drive.key.toString('hex'))
+  // console.log('New drive created, key:')
+  // console.log('  ', this.drive.key.toString('hex'))
+  // console.log('  ', this.drive)
+  // await this.client.network.configure(this.drive, {announce: true, lookup: true})
   return this.drive.key.toString('hex')
  }
 

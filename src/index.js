@@ -455,6 +455,10 @@ wsServer.on('connection', function ws(ws, req) {
           }
         } else if (o.reftype.trim() === 'sync-nxp-data') {
           console.log('request to sync data for a contract')
+          console.log(o.data)
+          // query hopresults per key
+          const dataResults = liveHyperspace.peerResults(o.data.uuid)
+          // then replicate part of hopResults hyerbee with the peer, first make hopresult hyperbee replicatabl?
           // route to peerstore to replicate
         } else if (o.reftype.trim() === 'save-json-json') {
             if (o.data.source === 'local') {
