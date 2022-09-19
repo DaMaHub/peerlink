@@ -111,6 +111,7 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
   await this.dbPublicLibrary.ready()
   beePubkeys.push({'pubilclibrary': this.dbPublicLibrary._feed.key.toString('hex')})
   // console.log(this.dbPublicLibrary._feed)
+  this.client.replicate(this.dbPublicLibrary.feed)
 
   const core2 = store.get({ name: 'peerlibrary' })
   this.dbPeerLibrary = new Hyperbee(core2, {
