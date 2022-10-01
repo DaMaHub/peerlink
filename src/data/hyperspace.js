@@ -146,6 +146,7 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
     valueEncoding: 'json' // same options as above
   })
   await this.dbHOPresults.ready()
+  this.client.replicate(this.dbHOPresults.feed)
   beePubkeys.push({'hopresults': this.dbHOPresults._feed.key.toString('hex')})
 
   const core5 = store.get({ name: 'kbledger' })
@@ -154,6 +155,7 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
     valueEncoding: 'json' // same options as above
   })
   await this.dbKBledger.ready()
+  this.client.replicate(this.dbKBledger.feed)
   beePubkeys.push({'kbledger': this.dbKBledger._feed.key.toString('hex')})
 
   return beePubkeys
@@ -196,8 +198,8 @@ HyperspaceWorker.prototype.clearcloseHyperspace = async function () {
 * @method saveKBLentry
 *
 */
-HyperspaceWorker.prototype.saveKBLentry = async function (refContract) {
-  await this.dbKBledger.put(refContract.hash, refContract.contract)
+HyperspaceWorker.prototype.saveKBLentry = async function (ledgerEntry) {
+  await this.dbKBledger.put(ledgerEntry.hash, ledgerEntry.data)
 }
 
 /**
