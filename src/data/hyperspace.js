@@ -382,9 +382,13 @@ HyperspaceWorker.prototype.peerResults = async function (dataPrint) {
   })
   await this.client.replicate(this.dbPublicLibraryTemp.feed) // fetch from the network
   await this.dbPublicLibraryTemp.ready()
-  // console.log('value for key')
-  // console.log(await this.dbPublicLibraryTemp.get('key'))
-  return { replicate: true }
+  // rep demo data
+  let resultsDemoRep = await this.replicateHOPresults()
+  let repResponse = {}
+  repResponse.replicate = true
+  repResponse.type = 'temppubliclibrary'
+  repResponse.demo = resultsDemoRep 
+  return repResponse
  }
 
  /**
@@ -404,6 +408,46 @@ HyperspaceWorker.prototype.getReplicatePublicLibrary = async function (nxp) {
   return contractData
 }
 
+/**
+* replicate the demo data to the peers results
+* @method replicateHOPresults
+*
+*/
+HyperspaceWorker.prototype.replicateHOPresults = async function () {
+  const beeKey = 'eff38e0adefd1e1ffcc8dcf4e3413148645a183f2c13679365c431bcc2d26668'
+
+  const store = this.client.corestore('peerspace-hyperbeetemp')
+  const core = store.get(beeKey)
+
+  // load and read the hyperbee identified by `beeKey`
+  const beeResults =new Hyperbee(core, {
+    keyEncoding: 'utf-8', // can be set to undefined (binary), utf-8, ascii or and abstract-encoding
+    valueEncoding: 'json' // same options as above
+  })
+
+  await this.client.replicate(beeResults.feed) // fetch from the network
+  await beeResults.ready()
+  // console.log('value for key ie results dataPrint')
+  // console.log(await beeResults.get('005ad9c1c29b6b730b6e9f73dd108f8c716a6075'))
+  // console.log('after get uuid')
+  let rs = beeResults.createReadStream() // anything >=a and <=d
+
+  for await (const { key, value } of rs) {
+    // console.log(`${key} -> ${value}`)
+    // need a save funnction in here
+    if (key === 'bdb6a7db0b479d9b30406cd24f3cc2f315fd3ba0') {
+      // console.log(`${key} -> ${value}`)
+      let dataR = {}
+      dataR.hash = key
+      dataR.data = value
+      await this.saveHOPresults(dataR)
+    }  
+  }
+  let repRresponse = {}
+  repRresponse.replicate = true
+  repRresponse.type = 'represultsdemo'
+  return repRresponse
+}
 
 /**
 * take nxp id from temporary pubic network library and add to peers public library
