@@ -761,7 +761,7 @@ wsServer.on('connection', function ws(ws, req) {
     pairSockTok = {}
     liveHOPflow = {}
     setFlow = false
-    process.exit(0)
+    // process.exit(0)
   })
   ws.on('error', ws => {
     console.log('socket eeeerrrorrrr')
