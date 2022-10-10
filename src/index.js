@@ -1,9 +1,9 @@
 'use strict'
-import { dirname } from 'path'
-import { fileURLToPath } from 'url'
-const _dirname = typeof __dirname !== 'undefined'
-  ? __dirname
-  : dirname(fileURLToPath(import.meta.url))
+import path from 'path'
+import { fileURLToPath } from 'node:url';
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+console.log(__dirname)
 import { createServer } from 'https'
 // import { createServer } from 'http'
 import fs from 'fs'
@@ -32,8 +32,8 @@ let setFlow = false
 let libraryData = {}
 let rateQueue = []
 const options = {
-  key: fs.readFileSync(_dirname + '/key.pem'),
-  cert: fs.readFileSync(_dirname + '/cert.pem')
+  key: fs.readFileSync(__dirname + '/key.pem'),
+  cert: fs.readFileSync(__dirname + '/cert.pem')
 }
 
 // const server = createServer((request, response) => {
