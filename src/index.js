@@ -11,7 +11,7 @@ import crypto from 'crypto'
 import { WebSocketServer } from 'ws'
 import uuid from 'uuid'
 import throttledQueue from 'throttled-queue'
-import CaleAi from 'cale-holism'
+import BbAi from 'bentobox-ai'
 import HOP from 'node-safeflow'
 import LibComposer from 'librarycomposer'
 import HyperspaceProtocol from './data/hyperspace.js'
@@ -23,7 +23,7 @@ dotenv.config()
 const localpath = '/peerstore'
 let jwtList = []
 let pairSockTok = {}
-const liveCALEAI = new CaleAi()
+const liveBBAI = new BbAi()
 const liveLibrary = new LibComposer()
 const liveHyperspace = new HyperspaceProtocol()
 const liveParser = new FileParser(localpath)
@@ -347,17 +347,19 @@ wsServer.on('connection', function ws(ws, req) {
     // console.log('token status')
     // console.log(jwtStatus)
     if (jwtStatus === true) {
-      if (o.reftype.trim() === 'ignore' && o.type.trim() === 'caleai') {
+      if (o.reftype.trim() === 'ignore' && o.type.trim() === 'bbai') {
         if (o.action === 'question') {
           // send to CALE NLP path
-          let replyData = liveCALEAI.nlpflow(o.data)
-          let caleReply = {}
-          caleReply.type = 'cale-reply'
-          caleReply.data = {}
-          ws.send(JSON.stringify(replyData))
+          console.log('bbqq')
+          console.log(o.data)
+          let replyData = liveBBAI.nlpflow(o.data.text)
+          let bbReply = {}
+          bbReply.type = 'bbai-reply'
+          bbReply.data = replyData
+          ws.send(JSON.stringify(bbReply))
         } else if (o.action === 'future') {
           // send to routine for prediction or to chat interface to say CALE cannot help right now
-          /* let futureData = liveCALEAI.routineFuture()
+          /* let futureData = liveBBAI.routineFuture()
           let caleFuture = {}
           caleFuture.type = 'cale-future'
           caleFuture.data = {}
